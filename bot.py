@@ -79,7 +79,7 @@ def is_link_youtube(link):
     return (link.startswith("https://youtube.com") or link.startswith("https://www.youtube.com"))
 
 def is_channel_banned(id):
-    return (id == "361101627295531008" or id == "361093782801743874" or  id == "361100712735932416" or id == "361122202176847872")
+    return (id == "361101627295531008" or id == "361093782801743874" or  id == "361100712735932416" or id == "361122202176847872" or id=="362013568700252162")
 
 @client.event
 async def on_ready():
@@ -120,6 +120,8 @@ IA = "Isabel [IA]#6016"
 
 @client.event
 async def on_message(message):
+    if (message.author.id == "359784743518339082"):
+        return
     lock = 0
     global liste_command
     global list_music
