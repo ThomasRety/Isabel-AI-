@@ -79,7 +79,26 @@ def is_link_youtube(link):
     return (link.startswith("https://youtube.com") or link.startswith("https://www.youtube.com"))
 
 def is_channel_banned(id):
-    return (id == "361101627295531008" or id == "361093782801743874" or  id == "361100712735932416" or id == "361122202176847872" or id=="362013568700252162")
+    global list_banned
+    for ia in list_banned:
+        if(ia.startswith(id)):
+            return True
+    return False
+
+def save_banned_channel(id):
+    fd = open('./save/banned.txt', 'a')
+    fd.write(id + "\n")
+    fd.close()
+
+def open_banned():
+    fd = open('./save/banned.txt', 'r')
+    list_banned = list()
+    for line in fd:
+        list_banned.append(line)
+    fd.close()
+    return (list_banned)
+
+list_banned = open_banned()
 
 @client.event
 async def on_ready():
@@ -127,8 +146,19 @@ async def on_message(message):
     global list_music
     global help_msg
     global list_curses
+    global list_banned
+    
     if (is_channel_banned(message.channel.id)):
-        print("Channel's banned")
+        print(message.channel.name)
+        return
+
+    if message.content.lower() == "!banisabel" and auth_author(message):
+        print(len(message.content.lower()))
+        if len(message.content.lower()) > len("!banisabel"):
+            save_banned_channel(message.content.lower()[len("!banisabel"):])
+        else:
+            save_banned_channel(message.channel.id)
+        list_banned = open_banned()
         return
     
     if message.content.lower().startswith("!curses") and auth_author(message):
