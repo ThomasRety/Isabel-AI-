@@ -159,6 +159,10 @@ async def on_message(message):
     if (message.content.lower().startswith("!helpdice");
         await client.send_message(message.channel, help_dice)
         return
+
+    if message.content.lower() == "!help":
+        await client.send_message(message.channel, help_msg)
+        return
         
     if (message.content.lower().startswith("!de"):
         nb_arg = message.content.lower().split(' ')
@@ -398,9 +402,6 @@ async def on_message(message):
 
             message = await client.wait_for_message(check=check)
             await client.send_message(message.channel, "Bien Joué à toi aussi")
-
-    if message.content.lower() == "!help":
-        await client.send_message(message.channel, help_msg)
 
     if message.content.lower() == "!commands":
         s = ''
