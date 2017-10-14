@@ -4,10 +4,41 @@ from discord.ext import commands
 import asyncio
 import time
 from random import randint, choice
+import sqlite3
+
 
 Client = discord.Client()
 bot_prefix = ""
 client = commands.Bot(command_prefix=bot_prefix)
+
+###################################### Error Handling
+
+def write(Error):
+    time = tim.time()
+    
+
+###################################### DATABASE 
+BETA_ENABLED = True
+
+db = '/home/Isabel/Isabel-AI-/bd/bdd.bd'
+if (BETA_ENABLED):
+    db = '/home/tristan/bot/Aels_ISABEL/bd/bdd.bd'
+
+conn = sqlite3.connect(db)
+c = conn.cursor()
+
+
+def execute_request(f):
+    try:
+        c.execute(f)
+    except sqlite3.OperationalError as E:
+        error(E)
+        return (False)
+    ro = c.fetchall()
+    conn.commit()
+    return (row)
+
+
 
 help_msg = """ Voici une aide des commandes disponibles!\n
 - $cool \n
@@ -126,9 +157,7 @@ async def on_message(message):
     global help_msg
     global list_curses
     if (is_channel_banned(message.channel.id)):
-        print("Channel's banned")
         return
-    
     if message.content.lower().startswith("!curses") and auth_author(message):
         if len(message.content) >= 8:
             message.content = message.content[8:]
