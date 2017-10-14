@@ -156,7 +156,7 @@ async def on_message(message):
     global list_banned
     global help_dice
 
-    if (message.content.lower().startswith("!helpdice");
+    if (message.content.lower().startswith("!helpdice")):
         await client.send_message(message.channel, help_dice)
         return
 
@@ -164,7 +164,7 @@ async def on_message(message):
         await client.send_message(message.channel, help_msg)
         return
         
-    if (message.content.lower().startswith("!de"):
+    if (message.content.lower().startswith("!de")):
         nb_arg = message.content.lower().split(' ')
         if len(nb_arg) == 1:
             chiffre = randint(0,100)
