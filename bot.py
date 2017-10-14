@@ -15,9 +15,16 @@ help_msg = """ Voici une aide des commandes disponibles!\n
 - !add : ajoute une commande personnalisée (uniquement admin) \n
 - !music : donne une musique parmi celles ajoutées \n
 - !youtube link : ajoute le link aux musiques déjà existantes (uniquement admin) \n
-- !ping / !pong : permet de jouer au ping pong (uniquement dans #salle-de-sport \n"""
+- !ping / !pong : permet de jouer au ping pong (uniquement dans #salle-de-sport \n
+- !de : permet de jouer aux dés. Voir !helpdice pour plus d'informations\n
+- !helpdice : permet d'afficher l'aide pour les dés."""
 
-
+help_dice = """ Voici l'aide des dés:\n
+- !de\n
+- !de [chiffre]\n
+- !de [floor] [nombre des]\n
+- !de [floor] [cible] [floor]\n
+- !de [floor] [cible] [floor] [critical fail] [critical succes]\n"""
 
 def open_commands():
     fd = open('./save/commands.txt', 'r')
@@ -147,7 +154,108 @@ async def on_message(message):
     global help_msg
     global list_curses
     global list_banned
-    
+    global help_dice
+
+    if (message.content.lower().startswith("!helpdice");
+        await client.send_message(message.channel, help_dice)
+        return
+        
+    if (message.content.lower().startswith("!de"):
+        nb_arg = message.content.lower().split(' ')
+        if len(nb_arg) == 1:
+            chiffre = randint(0,100)
+            await client.send_message(message.channel, "Résultat: "+ str(chiffre))
+            return
+        
+        elif (len(nb_arg) == 2):
+            try:
+                chiffre = randint(0, int(nb_arg[1]))
+                await client.send_message(message.channel, "Résultat: " + str(chiffre))
+            except Exception as E:
+                print(E)
+                await client.send_message(message.channel, "Usage: !de [chiffre]")
+            return
+        
+        elif (len(nb_arg) == 3):
+            try:
+                nb_des = int(nb_arg[2])
+                floor = int(nb_arg[1])
+                result = "Resultat: "
+                n = 0
+                if nb_des <= 1:
+                    await client.send_message(message.channel, "Erreur! Le nombre de dés doit être positif")
+                    return
+                while n != nb_des:
+                    chiffre = randint(0, floor)
+                    result = result + str(chiffre) + ' '
+                    n = n + 1
+                await client.send_message(message.channel, result)
+            except Exception as E:
+                print(E)
+                await client.send_message(message.channel, "Usage: !de [floor] [nombre des]")
+            return
+
+        elif (len(nb_arg) == 4):
+            try:
+                floor_1 = int(nb_arg[1])
+                floor_2 = int(nb_arg[3])
+                target = int(nb_arg[2])
+                if target < floor_2 or floor_1 >= floor_2:
+                    await client.send_message(message.channel, "Usage: !de [floor] [cible] [floor]")
+                    return
+                chiffre = randint(floor_1, floor_2)
+                if (chiffre == target):
+                    await client.send_message(message.channel, "Réussite critique! Résultat = " + str(chiffre))
+                    return
+                elif (chiffre < target and (chiffre > (floor_1 + ((floor_2 - floor_1) * 0.1)))):
+                    await client.send_message(message.channel, "Echec! Résultat = " + str(chiffre))
+                elif (chiffre > target and (chiffre < (floor_2 + ((floor_2 - floor_1) * 0.1)))):
+                    await client.send_message(message.channel, "Reussite! Résultat = " + str(chiffre))
+                elif (chiffre < target and (chiffre < (floor_1 + ((floor_2 - floor_1) * 0.1)))):
+                    await client.send_message(message.channel, "Echec critique! Résultat = " + str(chiffre))
+                elif (chiffre > target and (chiffre > (floor_2 + ((floor_2 - floor_1) * 0.1)))):
+                    await client.send_message(message.channel, "Réussite critique! Résultat = " + str(chiffre))
+            except Exception as E:
+                print(E)
+                await client.send_message(message.channel, "Usage: !de [floor] [cible] [floor]")
+            return
+
+        elif (len(nb_arg) == 6):
+            try:
+                floor_1 = int(nb_arg[1])
+                floor_2 = int(nb_arg[3])
+                target = int(nb_arg[2])
+                critical_fail = int(nb_arg[4])
+                critique_succes = int(nb_arg[5])
+
+                if critical_fail < floor_1 or critical_fail > critique_succes:
+                    await client.send_message(message.channel, "Usage: !de [floor] [cible] [floor] [critical fail] [critical succes]")
+                    return
+                if critique_succes > floor_2:
+                    await client.send_message(message.channel, "Usage: !de [floor] [cible] [floor] [critical fail] [critical succes]")
+                    return                    
+                if target < floor_2 or floor_2 <= floor_1:
+                    await client.send_message(message.channel, "Usage: !de [floor] [cible] [floor] [critical fail] [critical succes]")
+                    return
+                
+                chiffre = randint(floor_1, floor_2)
+                if (chiffre == target):
+                    await client.send_message(message.channel, "Réussite critique! Résultat = " + str(chiffre))
+                    return
+                elif (chiffre < target and (chiffre > critical_fail)):
+                    await client.send_message(message.channel, "Echec! Résultat = " + str(chiffre))
+                elif (chiffre > target and (chiffre < critique_succes )):
+                    await client.send_message(message.channel, "Reussite! Résultat = " + str(chiffre))
+                elif (chiffre < target and (chiffre < critical_fail)):
+                    await client.send_message(message.channel, "Echec critique! Résultat = " + str(chiffre))
+                elif (chiffre > target and (chiffre > critique_succes)):
+                    await client.send_message(message.channel, "Réussite critique! Résultat = " + str(chiffre))
+            except Exception as E:
+                print(E)
+                await client.send_message(message.channel, "Usage: !de [floor] [cible] [floor] [critical fail] [critical succes]")
+                return
+            return
+        
     if (is_channel_banned(message.channel.id)):
         print(message.channel.name)
         return
