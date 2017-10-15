@@ -17,7 +17,8 @@ help_msg = """ Voici une aide des commandes disponibles!\n
 - !youtube link : ajoute le link aux musiques déjà existantes (uniquement admin) \n
 - !ping / !pong : permet de jouer au ping pong (uniquement dans #salle-de-sport \n
 - !de : permet de jouer aux dés. Voir !helpdice pour plus d'informations\n
-- !helpdice : permet d'afficher l'aide pour les dés."""
+- !helpdice : permet d'afficher l'aide pour les dés.\n
+- !sumdice nb_dice : fait la somme de NB_DICE de type des NB_DICE et renvoie des informations."""
 
 help_dice = """ Voici l'aide des dés:\n
 - !de\n
@@ -163,7 +164,33 @@ async def on_message(message):
     if message.content.lower() == "!help":
         await client.send_message(message.channel, help_msg)
         return
-        
+
+    if (message.content.lower().startswith("!sumdice")):
+        nb_arg = message.content.lower().split(' ')
+        nb_result = []
+        n = 0
+        try:
+            nb_dice = int(nb_arg[1])
+            if (nb_dice <= 0):
+                await client.send_message(message.channel, "Usage: !sumdice nb_dice")
+                return
+            
+            while (n < nb_dice):
+                nb_result.append(randint(0, nb_dice))
+                n = n + 1
+            maxi = max(nb_result)
+            mini = min(nb_result)
+            sumd = sum(nb_result)
+            moy = sumd / nb_dice
+            result = "Nombre de dés: {}\nSomme: {}\nMoyenne: {}\nMinimum: {}\nMaximum: {}".format(str(nb_dice), str(sumd), str(moy), str(mini), str(maxi))
+            await client.send_message(message.channel, result)
+
+        except Exception as E:
+            print(message.content)
+            print(E)
+            print('------------------------')
+        return
+
     if (message.content.lower().startswith("!de")):
         nb_arg = message.content.lower().split(' ')
         if len(nb_arg) == 1:
