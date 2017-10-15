@@ -18,7 +18,7 @@ help_msg = """ Voici une aide des commandes disponibles!\n
 - !ping / !pong : permet de jouer au ping pong (uniquement dans #salle-de-sport \n
 - !de : permet de jouer aux dés. Voir !helpdice pour plus d'informations\n
 - !helpdice : permet d'afficher l'aide pour les dés.\n
-- !sumdice nb_dice : fait la somme de NB_DICE de type des NB_DICE et renvoie des informations."""
+- !sumdice nb_dice [floor]: fait la somme de NB_DICE de type des NB_DICE et renvoie des informations."""
 
 help_dice = """ Voici l'aide des dés:\n
 - !de\n
@@ -170,13 +170,14 @@ async def on_message(message):
         nb_result = []
         n = 0
         try:
+            floor = 6 if (len(nb_arg) == 2) else int(nb_arg[2])
             nb_dice = int(nb_arg[1])
             if (nb_dice <= 0):
                 await client.send_message(message.channel, "Usage: !sumdice nb_dice")
                 return
             
             while (n < nb_dice):
-                nb_result.append(randint(0, nb_dice))
+                nb_result.append(randint(0, floor))
                 n = n + 1
             maxi = max(nb_result)
             mini = min(nb_result)
@@ -184,7 +185,10 @@ async def on_message(message):
             moy = sumd / nb_dice
             result = "Nombre de dés: {}\nSomme: {}\nMoyenne: {}\nMinimum: {}\nMaximum: {}".format(str(nb_dice), str(sumd), str(moy), str(mini), str(maxi))
             await client.send_message(message.channel, result)
-
+            a = ''
+            for result in nb_result:
+                a = a + str(result) + ' '
+            await client.send_message(message.channel, 'Résultat des dés: {}'.format(a))
         except Exception as E:
             print(message.content)
             print(E)
