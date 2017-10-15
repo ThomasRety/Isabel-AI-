@@ -23,8 +23,8 @@ help_dice = """ Voici l'aide des dés:\n
 - !de\n
 - !de [chiffre]\n
 - !de [floor] [nombre des]\n
-- !de [floor] [cible] [floor]\n
-- !de [floor] [cible] [floor] [critical fail] [critical succes]\n"""
+- !de [floor 1] [cible] [floor 2]\n
+- !de [floor 1] [cible] [floor 2] [critical fail] [critical succes]\n"""
 
 def open_commands():
     fd = open('./save/commands.txt', 'r')
@@ -204,8 +204,9 @@ async def on_message(message):
                 floor_1 = int(nb_arg[1])
                 floor_2 = int(nb_arg[3])
                 target = int(nb_arg[2])
-                if target < floor_2 or floor_1 >= floor_2:
-                    await client.send_message(message.channel, "Usage: !de [floor] [cible] [floor]")
+                if target < floor_1 or floor_1 >= floor_2:
+                    print("Target = " + str(target) + " floor_1 = " + str(floor_1) + " floor_2 = " + str(floor_2) + " target < floor_1 : " + str(target < floor_1) + " floor 1 >= floor2: " + str(floor_1 >= floor_2))
+                    await client.send_message(message.channel, "Usage: !de [floor 1] [cible] [floor 2]")
                     return
                 chiffre = randint(floor_1, floor_2)
                 if (chiffre == target):
@@ -221,7 +222,7 @@ async def on_message(message):
                     await client.send_message(message.channel, "Réussite critique! Résultat = " + str(chiffre))
             except Exception as E:
                 print(E)
-                await client.send_message(message.channel, "Usage: !de [floor] [cible] [floor]")
+                await client.send_message(message.channel, "Usage: !de [floor 1] [cible] [floor 2]")
             return
 
         elif (len(nb_arg) == 6):
@@ -233,13 +234,13 @@ async def on_message(message):
                 critique_succes = int(nb_arg[5])
 
                 if critical_fail < floor_1 or critical_fail > critique_succes:
-                    await client.send_message(message.channel, "Usage: !de [floor] [cible] [floor] [critical fail] [critical succes]")
+                    await client.send_message(message.channel, "Usage: !de [floor 1] [cible] [floor 2] [critical fail] [critical succes]")
                     return
                 if critique_succes > floor_2:
-                    await client.send_message(message.channel, "Usage: !de [floor] [cible] [floor] [critical fail] [critical succes]")
+                    await client.send_message(message.channel, "Usage: !de [floor 1] [cible] [floor 2] [critical fail] [critical succes]")
                     return                    
-                if target < floor_2 or floor_2 <= floor_1:
-                    await client.send_message(message.channel, "Usage: !de [floor] [cible] [floor] [critical fail] [critical succes]")
+                if target < floor_1 or floor_2 <= floor_1:
+                    await client.send_message(message.channel, "Usage: !de [floor 1] [cible] [floor 2] [critical fail] [critical succes]")
                     return
                 
                 chiffre = randint(floor_1, floor_2)
@@ -256,7 +257,7 @@ async def on_message(message):
                     await client.send_message(message.channel, "Réussite critique! Résultat = " + str(chiffre))
             except Exception as E:
                 print(E)
-                await client.send_message(message.channel, "Usage: !de [floor] [cible] [floor] [critical fail] [critical succes]")
+                await client.send_message(message.channel, "Usage: !de [floor 1] [cible] [floor 2] [critical fail] [critical succes]")
                 return
             return
         
