@@ -36,7 +36,7 @@ help_dice = """ Voici l'aide des dés:\n
 def getChangelog(CHANGELOG):
     with open('./changelog.log', 'r') as f:
         for line in f:
-            CHANGELOG.append(line)
+            CHANGELOG += line
     return (CHANGELOG)
 
 CHANGELOG = getChangelog(CHANGELOG)
