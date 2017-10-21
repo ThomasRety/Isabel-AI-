@@ -9,6 +9,10 @@ Client = discord.Client()
 bot_prefix = ""
 client = commands.Bot(command_prefix=bot_prefix)
 
+
+VERSION = "0.92.1"
+CHANGELOG = ""
+
 help_msg = """ Voici une aide des commandes disponibles!\n
 - $cool \n
 - !commands : liste les commandes personnalisées \n
@@ -18,7 +22,9 @@ help_msg = """ Voici une aide des commandes disponibles!\n
 - !ping / !pong : permet de jouer au ping pong (uniquement dans #salle-de-sport \n
 - !de : permet de jouer aux dés. Voir !helpdice pour plus d'informations\n
 - !helpdice : permet d'afficher l'aide pour les dés.\n
-- !sumdice nb_dice [floor]: fait la somme de NB_DICE de type des NB_DICE et renvoie des informations."""
+- !sumdice nb_dice [floor]: fait la somme de NB_DICE de type des NB_DICE et renvoie des informations.\n
+- !version : renvoie la version de l'IA.\n
+- !changelog : renvoie le changelog de la dernière version"""
 
 help_dice = """ Voici l'aide des dés:\n
 - !de\n
@@ -26,6 +32,13 @@ help_dice = """ Voici l'aide des dés:\n
 - !de [floor] [nombre des]\n
 - !de [floor 1] [cible] [floor 2]\n
 - !de [floor 1] [cible] [floor 2] [critical fail] [critical succes]\n"""
+
+def getChangelog(CHANGELOG):
+    with open('./changelog.log', 'r') as f:
+        CHANGELOG = f.readlines()
+    return (CHANGELOG)
+
+CHANGELOG = getChangelog(CHANGELOG)
 
 def open_commands():
     fd = open('./save/commands.txt', 'r')
@@ -150,6 +163,8 @@ async def on_message(message):
     if (message.author.id == "359784743518339082"):
         return
     lock = 0
+    global CHANGELOG
+    global VERSION
     global liste_command
     global list_music
     global help_msg
@@ -157,6 +172,14 @@ async def on_message(message):
     global list_banned
     global help_dice
 
+
+    if (message.content.lower() == "!changelog"):
+        await client.send_message(message.channel, CHANGELOG)
+        return
+
+    if (message.content.lower() == "!version"):
+        await client.send_message(message.channel, VERSION)
+        return
     if (message.content.lower().startswith("!helpdice")):
         await client.send_message(message.channel, help_dice)
         return
