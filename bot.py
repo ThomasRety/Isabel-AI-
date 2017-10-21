@@ -10,7 +10,7 @@ bot_prefix = ""
 client = commands.Bot(command_prefix=bot_prefix)
 
 
-VERSION = "0.92.1"
+VERSION = "0.92.2"
 CHANGELOG = ""
 
 help_msg = """ Voici une aide des commandes disponibles!\n
@@ -35,7 +35,8 @@ help_dice = """ Voici l'aide des dés:\n
 
 def getChangelog(CHANGELOG):
     with open('./changelog.log', 'r') as f:
-        CHANGELOG = f.readlines()
+        for line in f:
+            CHANGELOG.append(line)
     return (CHANGELOG)
 
 CHANGELOG = getChangelog(CHANGELOG)
