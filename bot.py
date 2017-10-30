@@ -11,7 +11,7 @@ bot_prefix = ""
 client = commands.Bot(command_prefix=bot_prefix)
 
 
-VERSION = "0.92.2"
+VERSION = "1.0.0"
 CHANGELOG = ""
 dbPath = "./save/database.db"
 
@@ -43,39 +43,39 @@ def getChangelog(CHANGELOG):
 
 CHANGELOG = getChangelog(CHANGELOG)
 
-def open_commands():
-    fd = open('./save/commands.txt', 'r')
-    liste_command = {}
-    for line in fd:
+def getCommands(idServer):
+    a = dict()
+    f = "SELECT command, response FROM personnalisedCommands WHERE idServer='{}'".format(idServer)
+    rows = executeCommand(f)
+    if rows is False:
+        pass
+    else:
         try:
-            liste = line.split('|')
-            liste_command[liste[0]] = liste[1]
-        except:
+            for r in rows:
+                a[r[0]] = r[1]
+        except Exception as E:
             pass
-    fd.close()
-    return (liste_command)
+    return a
 
 liste_command = open_commands()
 
-def save_command(content):
-    fd = open('./save/commands.txt', 'a')
-    fd.write(content + '\n')
-    fd.close()
+def save_command(idServer, command, response):
+    f = "INSERT INTO personnalisedCommands(idServer, command, response) VALUES('{}', '{}', '{}')".format(idServer, command, response)
+    executeCommand(f)
+    
+def open_music(idServer):
+    f = "SELECT link FROM musicsLink WHERE idServer = '{}'".format(idServer)
+    row = executeCommand(f)
+    a = list()
+    if (row is not False):
+        for truc in row:
+            for musics in truc:
+                a.append(musics)
+    return (a)
 
-def open_music():
-    fd = open('./save/musics.txt', 'r')
-    list_music = list()
-    for line in fd:
-        list_music.append(line)
-    fd.close()
-    return (list_music)
-
-list_music = open_music()
-
-def save_musics(content):
-    fd = open('./save/musics.txt', 'a')
-    fd.write(content + '\n')
-    fd.close()
+def save_musics(link, idServer, name=None):
+    f = "INSERT INTO musicsLink(idServer, link, name) VALUES('{}, '{}', '{}')".format(idServer, link, name)
+    executeCommand(f)
 
 def getCurses(idServer):
     f = "SELECT curseWord FROM cursesWords WHERE idServer = '{}'".format(idServer)
@@ -200,8 +200,6 @@ async def on_message(message):
     lock = 0
     global CHANGELOG
     global VERSION
-    global liste_command
-    global list_music
     global help_msg
     global help_dice
 
@@ -377,8 +375,13 @@ async def on_message(message):
         print(message.content[5:])
         try:
             content = message.content[5:]
-            save_command(content)
-            liste_command = open_commands()
+            content = content.split('|')
+            try:
+                command = content[0]
+                response = content[1]
+            except Exception as E:
+                raise
+            save_command(message.server.id, command, response)
         except:
             client.send_message(message.channel, "Essayez !add question|reponses")
         return
@@ -389,18 +392,20 @@ async def on_message(message):
         if not is_link_youtube(message.content):
             await client.send_message(message.channel, "Ceci n'est pas un lien youtube")
             return
-        print("Le lien est bien de youtube")
-        save_musics(message.content)
-        list_music = open_music()
+        message.content = message.content.split(' ')
+        if len(message.content) == 2:
+            save_musics(message.content[0], message.server.id, message.content[1])
+        else:
+            save_musics(message.content[0], message.server.id)
 
     if message.content.lower().startswith("!music") and (message.channel.id == "360516429813907479" or message.channel.id == "360874716472279053" or message.channel.id == "360128517591138324"):
-        try:
-            music = choice(list_music)
+        listeMusic = getMusics(message.server.id)
+        if len(listeMusic) > 0:
             await client.send_message(message.channel, "Voici une musique: " + music)
-        except Exception as E:
+            music = choice(listeMusic)
+            await client.send_message(message.channel, str(music))
+        else:
             await client.send_message(message.channel, "Erreur: il n'y a aucune musique d'ajoutée")
-            print("Exception = " + E)
-            print(list_music)
 
     if message.content.startswith("$secret") and (auth_author(message)):
         liste_member = ''
@@ -492,21 +497,25 @@ async def on_message(message):
 
     if message.content.lower() == "!commands":
         s = ''
+        liste_command = getCommand(message.server.id)
         if len(liste_command) == 0:
             await client.send_message(message.channel, "Il y a aucune commande personnalisé pour l'instant.")
         for keys in liste_command:
             s = s + 'Commande : ' + keys + ' Réponse: ' + liste_command[keys] + '\n'
         await client.send_message(message.channel, s)
 
-    for keys in list_curses:
-        if keys.lower() == (message.content.lower() + '\n'):
-            await client.send_message(message.channel, "Ne pronnoncez pas ce mot!")
+    a = getCurses(message.server.id)
+    for word in a:
+        if word.lower() == message.content.lower():
+            await client.send_message(message.channel, "Ne prononcez pas ce mot!")
+            #TODO: KARMA -1
 
+    a = getCommands(message.server.id)
+    b = a.get(message.content.lower())
+    if b is not None:
+        await client.send_message(message.channel, b)
     
-    for keys in liste_command:
-        if keys.lower() == message.content.lower():
-            await client.send_message(message.channel, liste_command[keys])
-            break
+    
 
         
 
