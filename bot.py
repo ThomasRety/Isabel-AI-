@@ -11,7 +11,7 @@ bot_prefix = ""
 client = commands.Bot(command_prefix=bot_prefix)
 
 
-VERSION = "1.0.0"
+VERSION = "1.0.2"
 CHANGELOG = ""
 dbPath = "./save/database.db"
 
@@ -43,7 +43,7 @@ def getChangelog(CHANGELOG):
 
 CHANGELOG = getChangelog(CHANGELOG)
 
-def getCommands(idServer):
+def getCommand(idServer):
     a = dict()
     f = "SELECT command, response FROM personnalisedCommands WHERE idServer='{}'".format(idServer)
     rows = executeCommand(f)
@@ -112,7 +112,6 @@ def auth_author(message):
         return (False)
     except Exception as E:
         print(E)
-    #return (message.author.id == "193824642304180224" or message.author.id == "150342658911502336")
 
 def is_link_youtube(link):
     return (link.startswith("https://youtube.com") or link.startswith("https://www.youtube.com"))
