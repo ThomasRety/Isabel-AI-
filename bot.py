@@ -62,7 +62,7 @@ def save_command(idServer, command, response):
     f = "INSERT INTO personnalisedCommands(idServer, command, response) VALUES('{}', '{}', '{}')".format(idServer, command, response)
     executeCommand(f)
     
-def open_music(idServer):
+def getMusics(idServer):
     f = "SELECT link FROM musicsLink WHERE idServer = '{}'".format(idServer)
     row = executeCommand(f)
     a = list()
