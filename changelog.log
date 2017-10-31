@@ -1,3 +1,5 @@
+Version 1.0.2 : Corrections de multiples bugs
+Version 1.0.0 : Passage en Base de Données + Multiserver support
 Version 0.92.2 : Fix des changelogs
 Version 0.92.1 : Fix des réussites critiques pour les dés avec 5 paramètres
 Version 0.92 : Ajout d'un système de versionning

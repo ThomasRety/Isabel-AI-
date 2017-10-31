@@ -4,14 +4,16 @@ from discord.ext import commands
 import asyncio
 import time
 from random import randint, choice
+import sqlite3
 
 Client = discord.Client()
 bot_prefix = ""
 client = commands.Bot(command_prefix=bot_prefix)
 
 
-VERSION = "0.92.2"
+VERSION = "1.0.2"
 CHANGELOG = ""
+dbPath = "./save/database.db"
 
 help_msg = """ Voici une aide des commandes disponibles!\n
 - $cool \n
@@ -41,86 +43,116 @@ def getChangelog(CHANGELOG):
 
 CHANGELOG = getChangelog(CHANGELOG)
 
-def open_commands():
-    fd = open('./save/commands.txt', 'r')
-    liste_command = {}
-    for line in fd:
+def getCommand(idServer):
+    a = dict()
+    f = "SELECT command, response FROM personnalisedCommands WHERE idServer='{}'".format(idServer)
+    rows = executeCommand(f)
+    if rows is False:
+        pass
+    else:
         try:
-            liste = line.split('|')
-            liste_command[liste[0]] = liste[1]
-        except:
+            for r in rows:
+                a[r[0]] = r[1]
+        except Exception as E:
             pass
-    fd.close()
-    return (liste_command)
+    return a
 
-liste_command = open_commands()
 
-def save_command(content):
-    fd = open('./save/commands.txt', 'a')
-    fd.write(content + '\n')
-    fd.close()
+def save_command(idServer, command, response):
+    f = "INSERT INTO personnalisedCommands(idServer, command, response) VALUES('{}', '{}', '{}')".format(idServer, command, response)
+    executeCommand(f)
+    
+def getMusics(idServer):
+    f = "SELECT link FROM musicsLink WHERE idServer = '{}'".format(idServer)
+    row = executeCommand(f)
+    a = list()
+    if (row is not False):
+        for truc in row:
+            for musics in truc:
+                a.append(musics)
+    return (a)
 
-def open_music():
-    fd = open('./save/musics.txt', 'r')
-    list_music = list()
-    for line in fd:
-        list_music.append(line)
-    fd.close()
-    return (list_music)
+def save_musics(link, idServer, name=None):
+    f = "INSERT INTO musicsLink(idServer, link, name) VALUES('{}, '{}', '{}')".format(idServer, link, name)
+    executeCommand(f)
 
-list_music = open_music()
+def getCurses(idServer):
+    f = "SELECT curseWord FROM cursesWords WHERE idServer = '{}'".format(idServer)
+    row = executeCommand(f)
+    if (row == False):
+        return (list())
+    a = list()
+    try:
+        for truc in row:
+            for curses in truc:
+                a.append(curses)
+    except Exception as E:
+        return (list())
+    return (a)
 
-def save_musics(content):
-    fd = open('./save/musics.txt', 'a')
-    fd.write(content + '\n')
-    fd.close()
-
-def open_curse():
-    fd = open('./save/curses.txt', 'r')
-    list_curses = list()
-    for line in fd:
-        list_curses.append(line)
-    fd.close()
-    return (list_curses)
-
-list_curses = open_curse()
-
-def save_curses(content):
-    fd = open('./save/curses.txt', 'a')
-    fd.write(content + '\n')
-    fd.close()
+def save_curses(message, word):
+    f = "INSERT INTO cursesWords(idServer, curseWord) VALUES ('{}', '{}')".format(message.server.id, word)
+    executeCommand(f)
+    
 
 def proba(x, max=100):
     y = randint(0, max)
     return (x == y)
 
 def auth_author(message):
-     return (message.author.id == "193824642304180224" or message.author.id == "150342658911502336")
+    serverId = message.server.id
+    f = "SELECT idPeople from adminsIA where idServer = '{}'".format(serverId)
+    row = executeCommand(f)
+    if (row == False):
+        return (False)
+    try:
+        for peoples in row:
+            if (message.author.id in peoples):
+                return (True)
+        return (False)
+    except Exception as E:
+        print(E)
 
 def is_link_youtube(link):
     return (link.startswith("https://youtube.com") or link.startswith("https://www.youtube.com"))
 
-def is_channel_banned(id):
-    global list_banned
-    for ia in list_banned:
-        if(ia.startswith(id)):
-            return True
-    return False
+def is_channel_banned(message):
+    serverId = message.server.id
+    f = "SELECT idChannel FROM bannedChannels where idServer = '{}'".format(serverId)
+    row = executeCommand(f)
+    if (row == False):
+        return (True)
+    try:
+        for ids in row:
+            if (message.channel.id in ids):
+                return (True)
+        return (False)
+    except Exception as E:
+        print(E)
+    return (True)
 
-def save_banned_channel(id):
-    fd = open('./save/banned.txt', 'a')
-    fd.write(id + "\n")
-    fd.close()
+def save_banned_channel(message, id):
+    serverId = message.server.id
+    f = "INSERT INTO bannedChannels(idServer, idChannel) VALUES ('{}', '{}')".format(serverId, id)
+    executeCommand(f)
+    
 
-def open_banned():
-    fd = open('./save/banned.txt', 'r')
-    list_banned = list()
-    for line in fd:
-        list_banned.append(line)
-    fd.close()
-    return (list_banned)
+##### DB PART
 
-list_banned = open_banned()
+def executeCommand(f):
+    global dbPath
+    conn = sqlite3.connect(dbPath)
+    c = conn.cursor()
+    try:
+        c.execute(f)
+    except sqlite3.OperationalError as E:
+        print("Requete plante", f)
+        print(E)
+        return (False)
+    row = c.fetchall()
+    conn.commit()
+    conn.close()
+    return (row)
 
 @client.event
 async def on_ready():
@@ -166,11 +198,7 @@ async def on_message(message):
     lock = 0
     global CHANGELOG
     global VERSION
-    global liste_command
-    global list_music
     global help_msg
-    global list_curses
-    global list_banned
     global help_dice
 
 
@@ -265,7 +293,7 @@ async def on_message(message):
                     return
                 chiffre = randint(floor_1, floor_2)
                 if (chiffre == target):
-                    await client.send_message(message.channel, "Réussite critique! Résultat = " + str(chiffre))
+                    await client.send_message(message.channel, "Réussite! Résultat = " + str(chiffre))
                     return
                 elif (chiffre < target and (chiffre > (floor_1 + ((floor_2 - floor_1) * 0.1)))):
                     await client.send_message(message.channel, "Echec! Résultat = " + str(chiffre))
@@ -316,26 +344,25 @@ async def on_message(message):
                 return
             return
         
-    if (is_channel_banned(message.channel.id)):
+    if (is_channel_banned(message)):
         print(message.channel.name)
         return
 
     if message.content.lower() == "!banisabel" and auth_author(message):
         print(len(message.content.lower()))
         if len(message.content.lower()) > len("!banisabel"):
-            save_banned_channel(message.content.lower()[len("!banisabel"):])
+            save_banned_channel(message, message.content.lower()[len("!banisabel"):])
         else:
-            save_banned_channel(message.channel.id)
-        list_banned = open_banned()
+            save_banned_channel(message, message.channel.id)
         return
     
     if message.content.lower().startswith("!curses") and auth_author(message):
         if len(message.content) >= 8:
             message.content = message.content[8:]
-            save_curses(message.content)
-            list_curses = open_curse()
+            save_curses(message, message.content)
         else:
             s = "Voici la liste des mots interdits: " + "\n"
+            list_curses = getCurses(message.server.id)
             for key in list_curses:
                 s = s + key 
             print(s)
@@ -346,8 +373,13 @@ async def on_message(message):
         print(message.content[5:])
         try:
             content = message.content[5:]
-            save_command(content)
-            liste_command = open_commands()
+            content = content.split('|')
+            try:
+                command = content[0]
+                response = content[1]
+            except Exception as E:
+                raise
+            save_command(message.server.id, command, response)
         except:
             client.send_message(message.channel, "Essayez !add question|reponses")
         return
@@ -358,20 +390,22 @@ async def on_message(message):
         if not is_link_youtube(message.content):
             await client.send_message(message.channel, "Ceci n'est pas un lien youtube")
             return
-        print("Le lien est bien de youtube")
-        save_musics(message.content)
-        list_music = open_music()
+        message.content = message.content.split(' ')
+        if len(message.content) == 2:
+            save_musics(message.content[0], message.server.id, message.content[1])
+        else:
+            save_musics(message.content[0], message.server.id)
 
     if message.content.lower().startswith("!music") and (message.channel.id == "360516429813907479" or message.channel.id == "360874716472279053" or message.channel.id == "360128517591138324"):
-        try:
-            music = choice(list_music)
+        listeMusic = getMusics(message.server.id)
+        if len(listeMusic) > 0:
             await client.send_message(message.channel, "Voici une musique: " + music)
-        except Exception as E:
+            music = choice(listeMusic)
+            await client.send_message(message.channel, str(music))
+        else:
             await client.send_message(message.channel, "Erreur: il n'y a aucune musique d'ajoutée")
-            print("Exception = " + E)
-            print(list_music)
 
-    if message.content.startswith("$secret") and (message.author.id == "193824642304180224" or message.author.id == "150342658911502336" or message.author.id == "339290266169114626"):
+    if message.content.startswith("$secret") and (auth_author(message)):
         liste_member = ''
         liste_channel = ''
         for server in client.servers:
@@ -387,7 +421,7 @@ async def on_message(message):
         await client.send_message(channel1, liste_channel)
         print(liste_member)
         print(liste_channel)
-    if message.content.startswith("$secret") and not (message.author.id == "193824642304180224" or message.author.id == "150342658911502336" or message.author.id == "339290266169114626"):
+    if message.content.startswith("$secret") and not auth_author(message):
         await client.send_message(message.channel, "Vous n'avez pas la permission d'effecter cette commande")
     if message.content.startswith('$cool') and message.author.name == "Tristan Starkl El Destructor":
         await client.send_message(message.channel, 'Qui est cool? Tape Tristan ici')
@@ -461,37 +495,26 @@ async def on_message(message):
 
     if message.content.lower() == "!commands":
         s = ''
+        liste_command = getCommand(message.server.id)
         if len(liste_command) == 0:
             await client.send_message(message.channel, "Il y a aucune commande personnalisé pour l'instant.")
         for keys in liste_command:
             s = s + 'Commande : ' + keys + ' Réponse: ' + liste_command[keys] + '\n'
         await client.send_message(message.channel, s)
 
-    for keys in list_curses:
-        if keys.lower() == (message.content.lower() + '\n'):
-            await client.send_message(message.channel, "Ne pronnoncez pas ce mot!")
+    a = getCurses(message.server.id)
+    for word in a:
+        if word.lower() == message.content.lower():
+            await client.send_message(message.channel, "Ne prononcez pas ce mot!")
+            #TODO: KARMA -1
 
+    a = getCommands(message.server.id)
+    b = a.get(message.content.lower())
+    if b is not None:
+        await client.send_message(message.channel, b)
     
-    for keys in liste_command:
-        if keys.lower() == message.content.lower():
-            await client.send_message(message.channel, liste_command[keys])
-            break
+    
 
         
-@client.event
-async def on_typing(channel, user, when):
-    if (is_channel_banned(channel.id)):
-        return
-    if user.id == "150342658911502336" and proba(1, 33):
-        print('Aels le grand réfléchit')
-        await client.send_message(channel, 'AELS LE GRAND REFLECHIT')
-    elif user.id == "193824642304180224" and proba(1, 40):
-        print('Tristan parle')
-        await client.send_message(channel, 'SHUT UP TRISTAN PARLE')
-    elif user.id == "230278412365725696" and proba(1, 30) and message.channel.id != "360516429813907479":
-        print('Kebab parle')
-        await client.send_message(channel, 'FUYEZ KEBAB PARLE')
-  #  elif user.id == "337971676027289600" and proba(1, 2) and channel.id != "339208165482692608":
-   #     await client.send_message(channel, "Ecoutez moi, car l'autre Isabel ne répand que mensonges...")
 
 client.run("MzU5Nzg0NzQzNTE4MzM5MDgy.DKPrxA.xxcA9zwf9f2G1FYe7snbW1zmFEk")
