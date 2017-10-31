@@ -423,7 +423,7 @@ async def on_message(message):
         await client.send_message(channel1, liste_channel)
         print(liste_member)
         print(liste_channel)
-    if message.content.startswith("$secret") and not auth_author(message)):
+    if message.content.startswith("$secret") and not auth_author(message):
         await client.send_message(message.channel, "Vous n'avez pas la permission d'effecter cette commande")
     if message.content.startswith('$cool') and message.author.name == "Tristan Starkl El Destructor":
         await client.send_message(message.channel, 'Qui est cool? Tape Tristan ici')
