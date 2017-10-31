@@ -57,7 +57,6 @@ def getCommands(idServer):
             pass
     return a
 
-liste_command = open_commands()
 
 def save_command(idServer, command, response):
     f = "INSERT INTO personnalisedCommands(idServer, command, response) VALUES('{}', '{}', '{}')".format(idServer, command, response)
