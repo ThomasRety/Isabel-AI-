@@ -86,14 +86,13 @@ def modifKarma(message, howMuch):
             executeCommand(f)
             return
     except Exception as E:
-        print ("mdofiKarma", E)
-        return
+        pass
     try:
         karma = row[0][0]
         f = "UPDATE karma SET karma = {} WHERE idPlayer = '{}' and idServer = '{}'".format(str(karma+howMuch), idPlayer, idServer)
         executeCommand(f)
     except Exception as E:
-        print ("mdofiKarma", E)
+        print ("mdofiKarma UPDATE", E)
     return
 
 def getScoreboardKarma(message):
