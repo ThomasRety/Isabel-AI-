@@ -72,6 +72,60 @@ def getMusics(idServer):
                 a.append(musics)
     return (a)
 
+
+def modifKarma(message, howMuch):
+    idServer = message.server.id
+    idPlayer = message.author.id
+    f = "SELECT karma FROM karma WHERE idServer = '{}' and idPlayer = '{}'".format(idServer, idPlayer)
+    row = executeCommand(f)
+    if row is False:
+        return
+    try:
+        if len(row) == 1 and len(row[0]) == 1:
+            f = "INSERT INTO karma(idServer, idPlayer, karma) VALUES('{}', '{}', {})".format(idServer, idPlayer, str(howMuch))
+            executeCommand(f)
+            return
+        karma = row[0][0]
+        f = "UPDATE karma SET karma = {} WHERE idPlayer = '{}' and idServer = '{}'".format(str(karma+howMuch), idPlayer, idServer)
+        executeCommand(f)
+    except Exception as E:
+        print (E)
+    return
+
+def getScoreboardKarma(message):
+    idServer = message.server.id
+    f = "SELECT karma, idPlayer FROM karma WHERE idServer = '{}'".format(idServer)
+    row = executeCommand(f)
+    a = ""
+    try:
+        if row is False:
+            return ("Aucun joueur n'as encore de Karma sur ce serveur!")
+        if len(row) == 1 and len(row[0]) == 0:
+            return ("Aucun joueur n'as encore de Karma sur ce serveur!")
+        for truc in row:
+            for karma, idPlayer in truc:
+                b = "SELECT name FROM player WHERE idPlayer = '{}'".format(idPlayer)
+                a += getData(b) + ' : ' + str(karma) + '\n'
+
+    except Exception as E:
+        print (E)
+        return (a)
+    
+def getKarma(message):
+    idServer = message.server.id
+    idPlayer = message.author.id
+    f = "SELECT karma FROM karma WHERE idServer = '{}' and idPlayer = '{}'".format(idServer, idPlayer)
+    row = executeCommand(f)
+    try:
+        if row is False:
+            return ("Erreur")
+        if len(row) == 1 and len(row[0][0]) == 0:
+            return ("Vous n'avez pas de karma!")
+        return ("Votre karma est : " + str(row[0][0]))
+    except Exception as E:
+        print (E)
+    return ("")
+
 def save_musics(link, idServer, name=None):
     f = "INSERT INTO musicsLink(idServer, link, name) VALUES('{}, '{}', '{}')".format(idServer, link, name)
     executeCommand(f)
@@ -154,22 +208,38 @@ def executeCommand(f):
     conn.close()
     return (row)
 
+def getData(request):
+    row = executeCommand(request)
+    if row == False:
+        return (False)
+    try:
+        return (row[0][0])
+    except:
+        return (False)
+
+def insertPlayer(message):
+    idPlayer = message.author.id
+    name = message.author.name
+    f = "SELECT name FROM player where idPlayer = '{}'".format(idPlayer)
+    row = executeCommand(f)
+    try:
+        if row is False:
+            return
+        if len(row) == 1 and len(row[0]) == 0:
+            f = "INSERT INTO player(idPlayer, name) VALUES('{}', '{}')".format(idPlayer, name)
+            executeCommand(f)
+        else:
+            f = "UPDATE player SET name = '{}' WHERE idPlayer = '{}'".format(idPlayer)
+            executeCommand(f)
+    except Exception as E:
+        print (E)
+
 @client.event
 async def on_ready():
     print("Isabel Online")
     print("Name: {}".format(client.user.name))
     print("ID: {}".format(client.user.id))
     print("======================================")
-   
-@client.command(pass_context=True)
-async def Isabel(ctx):
-    await client.say("/tts Oui, C'est moi")
-
-@client.command(pass_context=True)
-async def liste_client(ctx):
-    for server in client.servers:
-        for member in server.members:
-           await client.say("{} est présent.".format(member.name))
 
 
 @client.event
@@ -202,6 +272,8 @@ async def on_message(message):
     global help_dice
 
 
+    insertPlayer(message)
+    modifKarma(message, 0)
     if (message.content.lower() == "!changelog"):
         await client.send_message(message.channel, CHANGELOG)
         return
@@ -453,6 +525,12 @@ async def on_message(message):
 #                    await client.send_message(message.channel, next(invite).url)
                     break
 
+    if message.content.lower().startswith("!karma"):
+        if len(message.content.lower) > (len("!karma") + 1):
+            await client.send_message(message.channel, getScoreboardKarma(message))
+        else:
+            await client.send_message(message.channel, "Votre Karma: ".format(str(getKarma(message))))
+            
     if message.content.lower().startswith("bonjour isabel"):
         await client.send_message(message.channel, 'Bonjour ' + message.author.name + ' !')
         lock = 1
@@ -480,9 +558,9 @@ async def on_message(message):
 
             message = await client.wait_for_message(check=check)
             if message.content.lower().startswith("conasse"):
-                karma = -1
+                modifKarma(message, -1)
             else:
-                karma = 1
+                modifKarma(message, +1)
                 await client.send_message(message.channel, "GG à toi aussi")
             print(karma)
         elif proba(1, randint(1, 25)):
@@ -506,14 +584,14 @@ async def on_message(message):
     for word in a:
         if word.lower() == message.content.lower():
             await client.send_message(message.channel, "Ne prononcez pas ce mot!")
-            #TODO: KARMA -1
+            modifKarma(message, -1)
 
     a = getCommands(message.server.id)
     b = a.get(message.content.lower())
     if b is not None:
         await client.send_message(message.channel, b)
     
-    
+
 
         
 
