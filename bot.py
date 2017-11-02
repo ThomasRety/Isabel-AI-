@@ -11,7 +11,7 @@ bot_prefix = ""
 client = commands.Bot(command_prefix=bot_prefix)
 
 
-VERSION = "1.0.2"
+VERSION = "1.1.1"
 CHANGELOG = ""
 dbPath = "./save/database.db"
 
@@ -43,7 +43,7 @@ def getChangelog(CHANGELOG):
 
 CHANGELOG = getChangelog(CHANGELOG)
 
-def getCommand(idServer):
+def getCommands(idServer):
     a = dict()
     f = "SELECT command, response FROM personnalisedCommands WHERE idServer='{}'".format(idServer)
     rows = executeCommand(f)
