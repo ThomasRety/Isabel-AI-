@@ -11,7 +11,7 @@ bot_prefix = ""
 client = commands.Bot(command_prefix=bot_prefix)
 
 
-VERSION = "1.1.1"
+VERSION = "1.1.2"
 CHANGELOG = ""
 dbPath = "./save/database.db"
 
@@ -85,11 +85,15 @@ def modifKarma(message, howMuch):
             f = "INSERT INTO karma(idServer, idPlayer, karma) VALUES('{}', '{}', {})".format(idServer, idPlayer, str(howMuch))
             executeCommand(f)
             return
+    except Exception as E:
+        print ("mdofiKarma", E)
+        return
+    try:
         karma = row[0][0]
         f = "UPDATE karma SET karma = {} WHERE idPlayer = '{}' and idServer = '{}'".format(str(karma+howMuch), idPlayer, idServer)
         executeCommand(f)
     except Exception as E:
-        print (E)
+        print ("mdofiKarma", E)
     return
 
 def getScoreboardKarma(message):
@@ -108,7 +112,7 @@ def getScoreboardKarma(message):
                 a += getData(b) + ' : ' + str(karma) + '\n'
 
     except Exception as E:
-        print (E)
+        print ("getScoreboard :", E)
         return (a)
     
 def getKarma(message):
