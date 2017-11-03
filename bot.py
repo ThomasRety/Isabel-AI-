@@ -81,7 +81,7 @@ def modifKarma(message, howMuch):
     if row is False:
         return
     try:
-        if len(row) == 1 and len(row[0]) == 1:
+        if len(row) == 0:
             f = "INSERT INTO karma(idServer, idPlayer, karma) VALUES('{}', '{}', {})".format(idServer, idPlayer, str(howMuch))
             executeCommand(f)
             return
@@ -103,7 +103,7 @@ def getScoreboardKarma(message):
     try:
         if row is False:
             return ("Aucun joueur n'as encore de Karma sur ce serveur!")
-        if len(row) == 1 and len(row[0]) == 0:
+        if len(row) == 0:
             return ("Aucun joueur n'as encore de Karma sur ce serveur!")
         for truc in row:
             for karma, idPlayer in truc:
@@ -122,7 +122,7 @@ def getKarma(message):
     try:
         if row is False:
             return ("Erreur")
-        if len(row) == 1 and len(row[0][0]) == 0:
+        if len(row) == 0:
             return ("Vous n'avez pas de karma!")
         return ("Votre karma est : " + str(row[0][0]))
     except Exception as E:
@@ -532,7 +532,7 @@ async def on_message(message):
         if len(message.content.lower()) > (len("!karma") + 1):
             await client.send_message(message.channel, getScoreboardKarma(message))
         else:
-            await client.send_message(message.channel, "Votre Karma: ".format(str(getKarma(message))))
+            await client.send_message(message.channel, str(getKarma(message)))
             
     if message.content.lower().startswith("bonjour isabel"):
         await client.send_message(message.channel, 'Bonjour ' + message.author.name + ' !')
