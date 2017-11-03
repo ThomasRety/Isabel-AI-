@@ -108,7 +108,9 @@ def getScoreboardKarma(message):
         print (row)
         for truc in row:
             b = "SELECT name FROM player WHERE idPlayer = '{}'".format(truc[1])
-            a += getData(b) + ' : ' + str(truc[0]) + '\n'
+            c = getData(b)
+            if c is not False:
+                a += c + ' : ' + str(truc[0]) + '\n'
         print ("getScoreboardKarma message = ", a)
     except Exception as E:
         print ("getScoreboard :", E)
