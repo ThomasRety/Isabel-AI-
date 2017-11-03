@@ -6,6 +6,7 @@ import time
 from random import randint, choice
 import sqlite3
 import re
+
 Client = discord.Client()
 bot_prefix = ""
 client = commands.Bot(command_prefix=bot_prefix)
@@ -43,6 +44,23 @@ def getChangelog(CHANGELOG):
     return (CHANGELOG)
 
 CHANGELOG = getChangelog(CHANGELOG)
+
+def getOldVersion():
+    global VERSION
+    old = ""
+    try:
+        with open('./.old', 'r') as f:
+            old = f.readline()
+        return old
+    except Exception as E:
+        try:
+            with open('./.old', 'a') as f:
+                f.write(VERSION)
+            return VERSION
+        except Exception as E:
+            print(E)
+            import sys
+            sys.exit(-1)
 
 def getCommands(idServer):
     a = dict()
@@ -296,6 +314,10 @@ async def on_ready():
     print("Name: {}".format(client.user.name))
     print("ID: {}".format(client.user.id))
     print("VERSION: {}".format(VERSION))
+    old = getOldVersion()
+    if VERSION != old:
+        for servers in client.servers:
+            await client.send_message(servers, "Isabel est maintenant en version: " + VERSION)
     print("======================================")
 
 
