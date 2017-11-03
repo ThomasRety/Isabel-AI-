@@ -97,7 +97,7 @@ def modifKarma(message, howMuch):
 
 def getScoreboardKarma(message):
     idServer = message.server.id
-    f = "SELECT karma, idPlayer FROM karma WHERE idServer = '{}'".format(idServer)
+    f = "SELECT karma, idPlayer FROM karma WHERE idServer = '{}' ORDER BY karma ASC".format(idServer)
     row = executeCommand(f)
     a = ""
     try:
