@@ -287,7 +287,7 @@ async def on_message(message):
         return
 
     if (message.content.lower() == "!version"):
-        await client.send_message(message.channel, VERSION)
+        await client.send_message(message.channel, "La version actuelle est: {}".format(VERSION), tts=True)
         return
     if (message.content.lower().startswith("!helpdice")):
         await client.send_message(message.channel, help_dice)
