@@ -232,7 +232,7 @@ def insertPlayer(message):
             f = "INSERT INTO player(idPlayer, name) VALUES('{}', '{}')".format(idPlayer, name)
             executeCommand(f)
         else:
-            f = "UPDATE player SET name = '{}' WHERE idPlayer = '{}'".format(idPlayer)
+            f = "UPDATE player SET name = '{}' WHERE idPlayer = '{}'".format(name, idPlayer)
             executeCommand(f)
     except Exception as E:
         print ("Insert Player Exception : ", E)
