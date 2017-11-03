@@ -109,10 +109,10 @@ def getScoreboardKarma(message):
         for truc in row:
             b = "SELECT name FROM player WHERE idPlayer = '{}'".format(truc[1])
             a += getData(b) + ' : ' + str(truc[0]) + '\n'
-
+        print ("getScoreboardKarma message = ", a)
     except Exception as E:
         print ("getScoreboard :", E)
-        return (a)
+    return (a)
     
 def getKarma(message):
     idServer = message.server.id
@@ -126,7 +126,7 @@ def getKarma(message):
             return ("Vous n'avez pas de karma!")
         return ("Votre karma est : " + str(row[0][0]))
     except Exception as E:
-        print (E)
+        print ("getKarma Exception : ", E)
     return ("")
 
 def save_musics(link, idServer, name=None):
@@ -235,7 +235,7 @@ def insertPlayer(message):
             f = "UPDATE player SET name = '{}' WHERE idPlayer = '{}'".format(idPlayer)
             executeCommand(f)
     except Exception as E:
-        print (E)
+        print ("Insert Player Exception : ", E)
 
 @client.event
 async def on_ready():
