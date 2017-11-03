@@ -245,7 +245,7 @@ async def on_ready():
     print("Isabel Online")
     print("Name: {}".format(client.user.name))
     print("ID: {}".format(client.user.id))
-    print("VERSION: {}".format(VERSION)
+    print("VERSION: {}".format(VERSION))
     print("======================================")
 
 
