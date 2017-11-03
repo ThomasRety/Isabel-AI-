@@ -228,7 +228,7 @@ def insertPlayer(message):
     try:
         if row is False:
             return
-        if len(row) == 1 and len(row[0]) == 0:
+        if len(row) == 0:
             f = "INSERT INTO player(idPlayer, name) VALUES('{}', '{}')".format(idPlayer, name)
             executeCommand(f)
         else:
@@ -565,7 +565,6 @@ async def on_message(message):
             else:
                 modifKarma(message, +1)
                 await client.send_message(message.channel, "GG à toi aussi")
-            print(karma)
         elif proba(1, randint(1, 25)):
             await client.send_message(message.channel, "Arf, j'ai raté")
             def check(msg):
