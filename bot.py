@@ -529,7 +529,7 @@ async def on_message(message):
                     break
 
     if message.content.lower().startswith("!karma"):
-        if len(message.content.lower) > (len("!karma") + 1):
+        if len(message.content.lower()) > (len("!karma") + 1):
             await client.send_message(message.channel, getScoreboardKarma(message))
         else:
             await client.send_message(message.channel, "Votre Karma: ".format(str(getKarma(message))))
