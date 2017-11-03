@@ -11,7 +11,7 @@ bot_prefix = ""
 client = commands.Bot(command_prefix=bot_prefix)
 
 
-VERSION = "1.1.3"
+VERSION = "1.1.4"
 CHANGELOG = ""
 dbPath = "./save/database.db"
 
@@ -26,7 +26,8 @@ help_msg = """ Voici une aide des commandes disponibles!\n
 - !helpdice : permet d'afficher l'aide pour les dés.\n
 - !sumdice nb_dice [floor]: fait la somme de NB_DICE de type des NB_DICE et renvoie des informations.\n
 - !version : renvoie la version de l'IA.\n
-- !changelog : renvoie le changelog de la dernière version"""
+- !changelog : renvoie le changelog de la dernière version\n
+- !curses [add] : Ajoute add aux mots interdits si spécifiés, sinon liste les mots interdits. [add] nécéssite d'être administrateur."""
 
 help_dice = """ Voici l'aide des dés:\n
 - !de\n
@@ -76,6 +77,44 @@ def getMusics(idServer):
 def modifKarma(message, howMuch):
     idServer = message.server.id
     idPlayer = message.author.id
+    f = "SELECT karma FROM karma WHERE idServer = '{}' and idPlayer = '{}'".format(idServer, idPlayer)
+    row = executeCommand(f)
+    if row is False:
+        return
+    try:
+        if len(row) == 0:
+            f = "INSERT INTO karma(idServer, idPlayer, karma) VALUES('{}', '{}', {})".format(idServer, idPlayer, str(howMuch))
+            executeCommand(f)
+            return
+    except Exception as E:
+        pass
+    try:
+        karma = row[0][0]
+        f = "UPDATE karma SET karma = {} WHERE idPlayer = '{}' and idServer = '{}'".format(str(karma+howMuch), idPlayer, idServer)
+        executeCommand(f)
+    except Exception as E:
+        print ("mdofiKarma UPDATE", E)
+    return
+
+
+def getIdPlayer(name):
+    if name.isdigit():
+        return name
+    #dans ce cas là c'est le Name du gars
+    f = "SELECT idPlayer FROM player WHERE name = '{}'".format(name)
+    row = executeCommand(f)
+    if row is False or len(row) == 0:
+        return False
+    try:
+        return (row[0][0])
+    except:
+        return False
+
+
+def modifKarma2(name, idServer, howMuch):
+    idPlayer = getIdPlayer(name)
+    if idPlayer is False:
+        return
     f = "SELECT karma FROM karma WHERE idServer = '{}' and idPlayer = '{}'".format(idServer, idPlayer)
     row = executeCommand(f)
     if row is False:
@@ -447,16 +486,15 @@ async def on_message(message):
             save_banned_channel(message, message.channel.id)
         return
     
-    if message.content.lower().startswith("!curses") and auth_author(message):
-        if len(message.content) >= 8:
-            message.content = message.content[8:]
-            save_curses(message, message.content)
-        else:
-            s = "Voici la liste des mots interdits: " + "\n"
-            list_curses = getCurses(message.server.id)
-            for key in list_curses:
-                s = s + key 
-            print(s)
+    if message.content.lower().startswith("!curses") and  len(message.content) >= 8 and auth_author(message):
+        message.content = message.content[8:]
+        save_curses(message, message.content)
+
+    elif message.content.lower().startswith("!curses"):
+        s = "Voici la liste des mots interdits: " + "\n"
+        list_curses = getCurses(message.server.id)
+        for key in list_curses:
+            s = s + key 
             await client.send_message(message.channel, s)
         return
     
@@ -589,6 +627,37 @@ async def on_message(message):
             message = await client.wait_for_message(check=check)
             await client.send_message(message.channel, "Bien Joué à toi aussi")
 
+    if (message.content.lower().startswith("!modifkarma") and auth_author(message)):
+        try:
+            message.content = message.content.lower().split(' ')
+        except:
+            return
+        if len(message.content) == 3:
+            name = safeData(message.content[1])
+            try:
+                howMuch = int(message.content[2])
+            except:
+                return
+            idServer = message.server.id
+            modifKarma2(name, idServer, howMuch)
+        elif len(message.content) == 2:
+            try:
+                howMuch = int(message.content[2])
+            except:
+                return
+            modifKarma(message, howMuch)
+        elif len(message.content) == 1:
+            return
+        else:
+            try:
+                howMuch = int(message.content[-1])
+            except:
+                return
+            idServer = message.server.id
+            name = message.content[1:-1]
+            for N in name:
+                modifKarma2(N, idServer, howMuch)
+            
     if message.content.lower() == "!commands":
         s = ''
         liste_command = getCommands(message.server.id)
