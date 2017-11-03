@@ -591,7 +591,7 @@ async def on_message(message):
     b = getWords(message.content.lower())
     for curse in a:
         for word in b:
-            if word.lower() == b.lower():
+            if word.lower() == curse.lower():
                 await client.send_message(message.channel, "Ne prononcez pas ce mot!")
                 modifKarma(message, -1)
 
