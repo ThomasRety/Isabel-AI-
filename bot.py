@@ -5,13 +5,13 @@ import asyncio
 import time
 from random import randint, choice
 import sqlite3
-
+import re
 Client = discord.Client()
 bot_prefix = ""
 client = commands.Bot(command_prefix=bot_prefix)
 
 
-VERSION = "1.1.2"
+VERSION = "1.1.3"
 CHANGELOG = ""
 dbPath = "./save/database.db"
 
@@ -151,7 +151,9 @@ def save_curses(message, word):
     f = "INSERT INTO cursesWords(idServer, curseWord) VALUES ('{}', '{}')".format(message.server.id, word)
     executeCommand(f)
     
-
+def getWords(message):
+    return re.compile('\w+').findall(message)
+    
 def proba(x, max=100):
     y = randint(0, max)
     return (x == y)
@@ -239,9 +241,11 @@ def insertPlayer(message):
 
 @client.event
 async def on_ready():
+    global VERSION
     print("Isabel Online")
     print("Name: {}".format(client.user.name))
     print("ID: {}".format(client.user.id))
+    print("VERSION: {}".format(VERSION)
     print("======================================")
 
 
@@ -266,6 +270,7 @@ IA = "Isabel [IA]#6016"
 
 @client.event
 async def on_message(message):
+    #l'IA ne parse pas ses propres messages
     if (message.author.id == "359784743518339082"):
         return
     lock = 0
@@ -583,10 +588,12 @@ async def on_message(message):
         await client.send_message(message.channel, s)
 
     a = getCurses(message.server.id)
-    for word in a:
-        if word.lower() == message.content.lower():
-            await client.send_message(message.channel, "Ne prononcez pas ce mot!")
-            modifKarma(message, -1)
+    b = getWords(message.content.lower())
+    for curse in a:
+        for word in b:
+            if word.lower() == b.lower():
+                await client.send_message(message.channel, "Ne prononcez pas ce mot!")
+                modifKarma(message, -1)
 
     a = getCommands(message.server.id)
     b = a.get(message.content.lower())
