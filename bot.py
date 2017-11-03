@@ -105,6 +105,7 @@ def getScoreboardKarma(message):
             return ("Aucun joueur n'as encore de Karma sur ce serveur!")
         if len(row) == 0:
             return ("Aucun joueur n'as encore de Karma sur ce serveur!")
+        print (row)
         for truc in row:
             for karma, idPlayer in truc:
                 b = "SELECT name FROM player WHERE idPlayer = '{}'".format(idPlayer)
