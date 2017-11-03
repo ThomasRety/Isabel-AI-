@@ -107,9 +107,8 @@ def getScoreboardKarma(message):
             return ("Aucun joueur n'as encore de Karma sur ce serveur!")
         print (row)
         for truc in row:
-            for karma, idPlayer in truc:
-                b = "SELECT name FROM player WHERE idPlayer = '{}'".format(idPlayer)
-                a += getData(b) + ' : ' + str(karma) + '\n'
+            b = "SELECT name FROM player WHERE idPlayer = '{}'".format(truc[1])
+            a += getData(b) + ' : ' + str(truc[0]) + '\n'
 
     except Exception as E:
         print ("getScoreboard :", E)
