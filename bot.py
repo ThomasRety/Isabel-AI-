@@ -153,7 +153,14 @@ def save_curses(message, word):
     
 def getWords(message):
     return re.compile('\w+').findall(message)
-    
+
+def safeData(text):
+    a = ""
+    b = re.compile("[^']").findall(text)
+    for letter in b:
+        a += letter
+    return a
+
 def proba(x, max=100):
     y = randint(0, max)
     return (x == y)
@@ -173,6 +180,7 @@ def auth_author(message):
         print(E)
 
 def is_link_youtube(link):
+    link = safeData(link)
     return (link.startswith("https://youtube.com") or link.startswith("https://www.youtube.com"))
 
 def is_channel_banned(message):
@@ -225,6 +233,7 @@ def getData(request):
 def insertPlayer(message):
     idPlayer = message.author.id
     name = message.author.name
+    name = safeData(name)
     f = "SELECT name FROM player where idPlayer = '{}'".format(idPlayer)
     row = executeCommand(f)
     try:
@@ -580,7 +589,7 @@ async def on_message(message):
 
     if message.content.lower() == "!commands":
         s = ''
-        liste_command = getCommand(message.server.id)
+        liste_command = getCommands(message.server.id)
         if len(liste_command) == 0:
             await client.send_message(message.channel, "Il y a aucune commande personnalisé pour l'instant.")
         for keys in liste_command:
