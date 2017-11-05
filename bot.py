@@ -704,6 +704,10 @@ async def on_message(message):
     
 
 
-        
-
-client.run("MzU5Nzg0NzQzNTE4MzM5MDgy.DKPrxA.xxcA9zwf9f2G1FYe7snbW1zmFEk")
+if __name__ == '__main__':
+    import sys
+    try:
+        TOKEN = sys.argv[1]
+    except:
+        sys.exit(1)
+    client.run(TOKEN)
