@@ -25,7 +25,7 @@ dbPath = "./save/database.db"
 help_msg = """ Voici une aide des commandes disponibles!\n
 - $cool \n
 - !commands : liste les commandes personnalisées \n
-- !add : ajoute une commande personnalisée (uniquement admin) \n
+- !add command|response [|option=Value]: ajoute une commande personnalisée (uniquement admin) \n
 - !music : donne une musique parmi celles ajoutées \n
 - !youtube link : ajoute le link aux musiques déjà existantes (uniquement admin) \n
 - !ping / !pong : permet de jouer au ping pong (uniquement dans #salle-de-sport \n
@@ -34,7 +34,9 @@ help_msg = """ Voici une aide des commandes disponibles!\n
 - !sumdice nb_dice [floor]: fait la somme de NB_DICE de type des NB_DICE et renvoie des informations.\n
 - !version : renvoie la version de l'IA.\n
 - !changelog : renvoie le changelog de la dernière version\n
-- !curses [add] : Ajoute add aux mots interdits si spécifiés, sinon liste les mots interdits. [add] nécéssite d'être administrateur."""
+- !curses [add] : Ajoute add aux mots interdits si spécifiés, sinon liste les mots interdits. [add] nécéssite d'être administrateur.\n
+- !setAuthorized PingPong|Music|Secret|Commands : authorise le channel à jouer l'option spécifié\n
+- !unAuthorized PingPong|Music|Secret|Commands : enlève l'autorisation de ce channel à jouer l'option spécifié"""
 
 help_dice = """ Voici l'aide des dés:\n
 - !de\n
@@ -43,13 +45,162 @@ help_dice = """ Voici l'aide des dés:\n
 - !de [floor 1] [cible] [floor 2]\n
 - !de [floor 1] [cible] [floor 2] [critical fail] [critical succes]\n"""
 
+def proba(x, max=100):
+    y = randint(0, max)
+    return (x == y)
+
+############################################################################################################################################
+########################################################### DB PART ########################################################################
+############################################################################################################################################
+
+def executeCommand(f):
+    global dbPath
+    conn = sqlite3.connect(dbPath)
+    c = conn.cursor()
+    try:
+        c.execute(f)
+    except sqlite3.OperationalError as E:
+        print("Requete plante", f)
+        print(E)
+        return (False)
+    row = c.fetchall()
+    conn.commit()
+    conn.close()
+    return (row)
+   
+############################################################################################################################################
+########################################################### GET DATA #######################################################################
+############################################################################################################################################
+
+def getCurses(idServer):
+    f = "SELECT curseWord FROM cursesWords WHERE idServer = '{}'".format(idServer)
+    row = executeCommand(f)
+    if (row == False):
+        return (list())
+    a = list()
+    try:
+        for truc in row:
+            for curses in truc:
+                a.append(curses)
+    except Exception as E:
+        return (list())
+    return (a)
+
+def getIdPlayer(name):
+    if name.isdigit():
+        return name
+    #dans ce cas là c'est le Name du gars
+    f = "SELECT idPlayer FROM player WHERE name = '{}'".format(name)
+    row = executeCommand(f)
+    if row is False or len(row) == 0:
+        return False
+    try:
+        return (row[0][0])
+    except:
+        return False
+    
+def getWords(message):
+    return re.compile('\w+').findall(message)
+
+def getKarma(message):
+    idServer = message.server.id
+    idPlayer = message.author.id
+    f = "SELECT karma FROM karma WHERE idServer = '{}' and idPlayer = '{}'".format(idServer, idPlayer)
+    row = executeCommand(f)
+    try:
+        if row is False:
+            return ("Erreur")
+        if len(row) == 0:
+            return ("Vous n'avez pas de karma!")
+        return ("Votre karma est : " + str(row[0][0]))
+    except Exception as E:
+        print ("getKarma Exception : ", E)
+    return ("")
+
+def safeData(text):
+    a = ""
+    b = re.compile("[^']").findall(text)
+    for letter in b:
+        a += letter
+    return a
+    
+def getMusics(idServer):
+    f = "SELECT link FROM musicsLink WHERE idServer = '{}'".format(idServer)
+    row = executeCommand(f)
+    a = list()
+    if (row is not False):
+        for truc in row:
+            for musics in truc:
+                a.append(musics)
+    return (a)
+
+def getData(request):
+    row = executeCommand(request)
+    if row == False:
+        return (False)
+    try:
+        return (row[0][0])
+    except:
+        return (False)
+
+def getScoreboardKarma(message):
+    idServer = message.server.id
+    f = "SELECT karma, idPlayer FROM karma WHERE idServer = '{}' ORDER BY karma DESC".format(idServer)
+    row = executeCommand(f)
+    a = ""
+    try:
+        if row is False:
+            return ("Aucun joueur n'as encore de Karma sur ce serveur!")
+        if len(row) == 0:
+            return ("Aucun joueur n'as encore de Karma sur ce serveur!")
+        print (row)
+        for truc in row:
+            b = "SELECT name FROM player WHERE idPlayer = '{}'".format(truc[1])
+            c = getData(b)
+            if c is not False:
+                a += c + ' : ' + str(truc[0]) + '\n'
+        print ("getScoreboardKarma message = ", a)
+    except Exception as E:
+        print ("getScoreboard :", E)
+    return (a)
+
+def getCommands(message, authorizationLevel):
+    idServer = message.server.id
+    content = safeData(message.content.lower())
+    f = "SELECT response FROM personnalisedCommands WHERE idServer='{}' AND command = '{}' AND needLevel <= {}".format(idServer, content, str(authorizationLevel))
+    rows = executeCommand(f)
+    if rows is False or len(rows) == 0:
+        return False
+    else:
+        try:
+            row = rows[0][0])
+        except Exception as E:
+            pass
+    if authorizationLevel >= 3:
+        return row
+    f = getAuthorizationCommand(message.channel.id, message.channel.id)
+    if f is False:
+        return row
+    return False
+
+def getListCommands(idServer, authorizationLevel):
+    a = dict()
+    f = "SELECT command, response FROM personnalisedCommands WHERE idServer= '{}' AND needLevel <= {}".format(idServer, str(authorizationLevel))
+    rows = executeCommand(f)
+    if rows is False or len(rows) == 0:
+        return False
+    try:
+        for row in rows:
+            a[row[0]] = row[1]
+    except Exception as E:
+        return False
+    return a
+
 def getChangelog(CHANGELOG):
     with open('./changelog.log', 'r') as f:
         for line in f:
             CHANGELOG += line
     return (CHANGELOG)
-
-CHANGELOG = getChangelog(CHANGELOG)
 
 def getOldVersion():
     global VERSION
@@ -68,35 +219,186 @@ def getOldVersion():
             import sys
             sys.exit(-1)
 
-def getCommands(idServer):
-    a = dict()
-    f = "SELECT command, response FROM personnalisedCommands WHERE idServer='{}'".format(idServer)
-    rows = executeCommand(f)
-    if rows is False:
-        pass
-    else:
+def getQuestion(message, defaultMessage='needAuthorization', defaultValue=0):
+    try:
+        question = message.split('|')
+        command = question[0]
+        response = question[1]
+        option = defaultMessage
+        value = defaultValue
         try:
-            for r in rows:
-                a[r[0]] = r[1]
+            options = question[2]
+            options = options.split('=')
+            if options[0] is not "":
+                option = options[0]
+            value = options[1]
         except Exception as E:
             pass
-    return a
+        finally:
+            return command, response, option, value
+    except Exception as E:
+        print ("Problème : ", E)
+    return False, False, False, False
 
+############################################################################################################################################
+########################################################### AUTHORIZATION ##################################################################
+############################################################################################################################################
 
-def save_command(idServer, command, response):
-    f = "INSERT INTO personnalisedCommands(idServer, command, response) VALUES('{}', '{}', '{}')".format(idServer, command, response)
+def getAuthorizationLevel(message):
+    serverId = message.server.id
+    f = "SELECT authorizationLevel FROM player WHERE idServer = '{}' AND idPlayer = '{}'".format(serverId, idPlayer)
+    row = executeCommand(f)
+    if (row == False) or len(row) == 0:
+        return (False)
+    try:
+        return (row[0][0])
+    except Exception as E:
+        print(E)
+
+def is_link_youtube(link):
+    link = safeData(link)
+    return (link.startswith("https://youtube.com") or link.startswith("https://www.youtube.com"))
+
+def is_channel_banned(message):
+    serverId = message.server.id
+    f = "SELECT idChannel FROM bannedChannels WHERE idServer = '{}'".format(serverId)
+    row = executeCommand(f)
+    if (row == False):
+        return (True)
+    try:
+        for ids in row:
+            if (message.channel.id in ids):
+                return (True)
+        return (False)
+    except Exception as E:
+        print(E)
+    return (True)
+
+def getAuthorizationCommand(idServer, idChannel):
+    f = "SELECT * FROM authorizationCommands WHERE idServer = '{}' AND idChannel = '{}'".format(isServer, idChannel)
+    row = executeCommand(f)
+    if row is False or len(row) == 0:
+        return (False)
+    return (True)
+
+def getAuthorizationMusic(idServer, idChannel):
+    f = "SELECT * FROM authorizationMusic WHERE idServer = '{}' AND idChannel = '{}'".format(isServer, idChannel)
+    row = executeCommand(f)
+    if row is False or len(row) == 0:
+        return (False)
+    return (True)
+
+def getAuthorizationPingPong(idServer, idChannel):
+    f = "SELECT * FROM authorizationPingPong WHERE idServer = '{}' AND idChannel = '{}'".format(isServer, idChannel)
+    row = executeCommand(f)
+    if row is False or len(row) == 0:
+        return (False)
+    return (True)
+
+def getAuthorizationSecret(idServer):
+    f = "SELECT idChannel FROM authorizationCommands WHERE idServer = '{}'".format(isServer)
+    row = executeCommand(f)
+    if row is False or len(row) == 0:
+        return (False)
+    return (row[0][0])
+
+def setAuthorizationCommands(idServer, idChannel):
+    f = "INSERT INTO authorizationCommands(idServer, idChannel) VALUES('{}', '{}')".format(isServer, idChannel)
     executeCommand(f)
     
-def getMusics(idServer):
-    f = "SELECT link FROM musicsLink WHERE idServer = '{}'".format(idServer)
-    row = executeCommand(f)
-    a = list()
-    if (row is not False):
-        for truc in row:
-            for musics in truc:
-                a.append(musics)
-    return (a)
+def setAuthorizationMusic(idServer, idChannel):
+    f = "INSERT INTO authorizationMusic(idServer, idChannel) VALUES('{}', '{}')".format(isServer, idChannel)
+    executeCommand(f)
 
+def setAuthorizationPingPong(idServer, idChannel):
+    f = "INSERT INTO authorizationPingPong(idServer, idChannel) VALUES('{}', '{}')".format(isServer, idChannel)
+    executeCommand(f)
+
+def setAuthorizationSecret(idServer, idChannel):
+    f = "INSERT INTO authorizationSecret(idServer, idChannel) VALUES('{}', '{}')".format(isServer, idChannel)
+    executeCommand(f)
+
+def deleteAuthorizationCommands(idServer, idChannel):
+    f = "DELETE FROM authorizationCommands WHERE idServer = '{}' AND idChannel = '{}'".format(isServer, idChannel)
+    executeCommand(f)
+    
+def setAuthorizationMusic(idServer, idChannel):
+    f = "INSERT INTO authorizationMusic(idServer, idChannel) VALUES('{}', '{}')".format(isServer, idChannel)
+    executeCommand(f)
+
+def setAuthorizationPingPong(idServer, idChannel):
+    f = "INSERT INTO authorizationPingPong(idServer, idChannel) VALUES('{}', '{}')".format(isServer, idChannel)
+    executeCommand(f)
+
+def setAuthorizationSecret(idServer, idChannel):
+    f = "INSERT INTO authorizationSecret(idServer, idChannel) VALUES('{}', '{}')".format(isServer, idChannel)
+    executeCommand(f)
+
+def setAuthorizationLevel(idServer, idPlayer, authorizalionLevel):
+    f = "UPDATE player SET authorizationLevel = {} WHERE idPlayer = '{}' AND idServer = '{}'".format(str(authorizationLevel), idPlayer, idServer)
+    executeCommand(f)
+
+############################################################################################################################################
+########################################################### SAVE DATA ######################################################################
+############################################################################################################################################
+
+
+def save_musics(link, idServer, name=None):
+    f = "INSERT INTO musicsLink(idServer, link, name) VALUES('{}, '{}', '{}')".format(idServer, link, name)
+    executeCommand(f)
+
+def save_banned_channel(message, id):
+    serverId = message.server.id
+    f = "INSERT INTO bannedChannels(idServer, idChannel) VALUES ('{}', '{}')".format(serverId, id)
+    executeCommand(f)
+    
+def saveAuthorizationPingPong(message, id):
+    serverId = message.server.id
+    f = "INSERT INTO authorizationPingPong(idServer, idChannel) VALUES('{}', '{}')".format(serverId, id)
+    executeCommand(f)
+
+def saveAuthorizationMusic(message, id):
+    serverId = message.server.id
+    f = "INSERT INTO authorizationMusic(idServer, idChannel) VALUES('{}', '{}')".format(serverId, id)
+    executeCommand(f)
+
+def saveAuthorizationSecret(message, id):
+    serverId = message.server.id
+    f = "INSERT INTO authorizationSecret(idServer, idChannel) VALUES('{}', '{}')".format(serverId, id)
+    executeCommand(f)
+
+def saveAuthorizationCommands(message, id):
+    serverId = message.server.id
+    f = "INSERT INTO authorizationCommands(idServer, idChannel) VALUES('{}', '{}')".format(serverId, id)
+    executeCommand(f)
+
+def saveDefaultChannel(message, id):
+    serverId = message.server.id
+    f = "INSERT INTO defaultChannel(idServer, idChannel) VALUES('{}', '{}')".format(serverId, id)
+    executeCommand(f)
+
+def save_curses(message, word):
+    f = "INSERT INTO cursesWords(idServer, curseWord) VALUES ('{}', '{}')".format(message.server.id, word)
+    executeCommand(f)
+
+def save_command(idServer, content, defaultMessage='needLevel', defaultValue=1):
+    command, response, option, value = getQuestion(content, defaultMessage=defaultMessage, defaultValue=defaultValue)
+    f = "SELECT * FROM personnalisedCommands WHERE idServer = '{}' AND command = '{}'".format(idServer, command)
+    row = executeCommand(f)
+    if len(row) != 0:
+        return ("La commande existe déjà")
+    if command is False:
+        return ("REQUETE PLANTE")
+    f = "INSERT INTO personnalisedCommands(idServer, command, response, {}) VALUES('{}', '{}', '{}', '{}')".format(option, idServer, command, response, str(value))
+    row = executeCommand(f)
+    if row is False:
+        return ("Erreur, l'option n'existe pas")
+    return ("La commande a été ajoutée avec succès")
+
+
+############################################################################################################################################
+########################################################### KARMA FUNCTIONS#################################################################
+############################################################################################################################################
 
 def modifKarma(message, howMuch):
     idServer = message.server.id
@@ -119,21 +421,6 @@ def modifKarma(message, howMuch):
     except Exception as E:
         print ("mdofiKarma UPDATE", E)
     return
-
-
-def getIdPlayer(name):
-    if name.isdigit():
-        return name
-    #dans ce cas là c'est le Name du gars
-    f = "SELECT idPlayer FROM player WHERE name = '{}'".format(name)
-    row = executeCommand(f)
-    if row is False or len(row) == 0:
-        return False
-    try:
-        return (row[0][0])
-    except:
-        return False
-
 
 def modifKarma2(name, idServer, howMuch):
     idPlayer = getIdPlayer(name)
@@ -158,157 +445,25 @@ def modifKarma2(name, idServer, howMuch):
         print ("mdofiKarma UPDATE", E)
     return
 
-def getScoreboardKarma(message):
-    idServer = message.server.id
-    f = "SELECT karma, idPlayer FROM karma WHERE idServer = '{}' ORDER BY karma DESC".format(idServer)
-    row = executeCommand(f)
-    a = ""
-    try:
-        if row is False:
-            return ("Aucun joueur n'as encore de Karma sur ce serveur!")
-        if len(row) == 0:
-            return ("Aucun joueur n'as encore de Karma sur ce serveur!")
-        print (row)
-        for truc in row:
-            b = "SELECT name FROM player WHERE idPlayer = '{}'".format(truc[1])
-            c = getData(b)
-            if c is not False:
-                a += c + ' : ' + str(truc[0]) + '\n'
-        print ("getScoreboardKarma message = ", a)
-    except Exception as E:
-        print ("getScoreboard :", E)
-    return (a)
-    
-def getKarma(message):
-    idServer = message.server.id
-    idPlayer = message.author.id
-    f = "SELECT karma FROM karma WHERE idServer = '{}' and idPlayer = '{}'".format(idServer, idPlayer)
-    row = executeCommand(f)
-    try:
-        if row is False:
-            return ("Erreur")
-        if len(row) == 0:
-            return ("Vous n'avez pas de karma!")
-        return ("Votre karma est : " + str(row[0][0]))
-    except Exception as E:
-        print ("getKarma Exception : ", E)
-    return ("")
-
-def save_musics(link, idServer, name=None):
-    f = "INSERT INTO musicsLink(idServer, link, name) VALUES('{}, '{}', '{}')".format(idServer, link, name)
-    executeCommand(f)
-
-def getCurses(idServer):
-    f = "SELECT curseWord FROM cursesWords WHERE idServer = '{}'".format(idServer)
-    row = executeCommand(f)
-    if (row == False):
-        return (list())
-    a = list()
-    try:
-        for truc in row:
-            for curses in truc:
-                a.append(curses)
-    except Exception as E:
-        return (list())
-    return (a)
-
-def save_curses(message, word):
-    f = "INSERT INTO cursesWords(idServer, curseWord) VALUES ('{}', '{}')".format(message.server.id, word)
-    executeCommand(f)
-    
-def getWords(message):
-    return re.compile('\w+').findall(message)
-
-def safeData(text):
-    a = ""
-    b = re.compile("[^']").findall(text)
-    for letter in b:
-        a += letter
-    return a
-
-def proba(x, max=100):
-    y = randint(0, max)
-    return (x == y)
-
-def auth_author(message):
-    serverId = message.server.id
-    f = "SELECT idPeople from adminsIA where idServer = '{}'".format(serverId)
-    row = executeCommand(f)
-    if (row == False):
-        return (False)
-    try:
-        for peoples in row:
-            if (message.author.id in peoples):
-                return (True)
-        return (False)
-    except Exception as E:
-        print(E)
-
-def is_link_youtube(link):
-    link = safeData(link)
-    return (link.startswith("https://youtube.com") or link.startswith("https://www.youtube.com"))
-
-def is_channel_banned(message):
-    serverId = message.server.id
-    f = "SELECT idChannel FROM bannedChannels where idServer = '{}'".format(serverId)
-    row = executeCommand(f)
-    if (row == False):
-        return (True)
-    try:
-        for ids in row:
-            if (message.channel.id in ids):
-                return (True)
-        return (False)
-    except Exception as E:
-        print(E)
-    return (True)
-
-def save_banned_channel(message, id):
-    serverId = message.server.id
-    f = "INSERT INTO bannedChannels(idServer, idChannel) VALUES ('{}', '{}')".format(serverId, id)
-    executeCommand(f)
-    
-
-##### DB PART
-
-def executeCommand(f):
-    global dbPath
-    conn = sqlite3.connect(dbPath)
-    c = conn.cursor()
-    try:
-        c.execute(f)
-    except sqlite3.OperationalError as E:
-        print("Requete plante", f)
-        print(E)
-        return (False)
-    row = c.fetchall()
-    conn.commit()
-    conn.close()
-    return (row)
-
-def getData(request):
-    row = executeCommand(request)
-    if row == False:
-        return (False)
-    try:
-        return (row[0][0])
-    except:
-        return (False)
+############################################################################################################################################
+########################################################### LAUNCH IA ######################################################################
+############################################################################################################################################
 
 def insertPlayer(message):
     idPlayer = message.author.id
     name = message.author.name
     name = safeData(name)
-    f = "SELECT name FROM player where idPlayer = '{}'".format(idPlayer)
+    idServer = message.server.id
+    f = "SELECT name FROM player where idPlayer = '{}' AND idServer = '{}'".format(idPlayer, idServer)
     row = executeCommand(f)
     try:
         if row is False:
             return
         if len(row) == 0:
-            f = "INSERT INTO player(idPlayer, name) VALUES('{}', '{}')".format(idPlayer, name)
+            f = "INSERT INTO player(idPlayer, name, idServer) VALUES('{}', '{}')".format(idPlayer, name)
             executeCommand(f)
         else:
-            f = "UPDATE player SET name = '{}' WHERE idPlayer = '{}'".format(name, idPlayer)
+            f = "UPDATE player SET name = '{}' WHERE idPlayer = '{}' AND idServer = '{}'".format(name, idPlayer, idServer)
             executeCommand(f)
     except Exception as E:
         print ("Insert Player Exception : ", E)
@@ -326,6 +481,7 @@ async def on_ready():
             await client.send_message(servers, "Isabel est maintenant en version: " + VERSION)
     print("======================================")
 
+CHANGELOG = getChangelog(CHANGELOG)
 
 @client.event
 async def on_member_join(member):
@@ -342,13 +498,20 @@ async def on_member_join(member):
         break
     await client.send_message(channel1, "Welcome {}. You joined the server at {}".format(member.name, str(member.joined_at)))
     client.add_roles(member, defaut_role)
-#    await client.send_message(channel2, "Welcome {}. You joined the server at {}".format(member.nick, str(member.joined_at)))
 
 IA = "Isabel [IA]#6016"
+
+############################################################################################################################################
+########################################################### IA #############################################################################
+############################################################################################################################################
 
 @client.event
 async def on_message(message):
     #l'IA ne parse pas ses propres messages
+    authorizationLevel = getAuthorizationLevel(message)
+    if authorizationLevel is False or authorizationLevel == 0:
+        return
+
     if (message.author.id == "359784743518339082"):
         return
     lock = 0
@@ -506,7 +669,7 @@ async def on_message(message):
         print(message.channel.name)
         return
 
-    if message.content.lower() == "!banisabel" and auth_author(message):
+    if message.content.lower() == "!banisabel" and authorizationLevel >= 3:
         print(len(message.content.lower()))
         if len(message.content.lower()) > len("!banisabel"):
             save_banned_channel(message, message.content.lower()[len("!banisabel"):])
@@ -514,7 +677,7 @@ async def on_message(message):
             save_banned_channel(message, message.channel.id)
         return
     
-    if message.content.lower().startswith("!curses") and  len(message.content) >= 8 and auth_author(message):
+    if message.content.lower().startswith("!curses") and  len(message.content) >= 8 and authorizationLevel >= 3:
         message.content = message.content[8:]
         save_curses(message, message.content)
 
@@ -526,22 +689,16 @@ async def on_message(message):
             await client.send_message(message.channel, s)
         return
     
-    if message.content.startswith('!add') and auth_author(message):
+    if message.content.startswith('!add') and authorizationLevel == 4:
         print(message.content[5:])
         try:
             content = message.content[5:]
-            content = content.split('|')
-            try:
-                command = content[0]
-                response = content[1]
-            except Exception as E:
-                raise
-            save_command(message.server.id, command, response)
+            await client.send_message(channel, save_command(message, content))
         except:
             client.send_message(message.channel, "Essayez !add question|reponses")
         return
 
-    if message.content.lower().startswith('!youtube') and auth_author(message):
+    if message.content.lower().startswith('!youtube') and authorizationLevel >= 2:
         print(message.content[9:])
         message.content = message.content[9:]
         if not is_link_youtube(message.content):
@@ -553,7 +710,7 @@ async def on_message(message):
         else:
             save_musics(message.content[0], message.server.id)
 
-    if message.content.lower().startswith("!music") and (message.channel.id == "360516429813907479" or message.channel.id == "360874716472279053" or message.channel.id == "360128517591138324"):
+    if message.content.lower().startswith("!music") and (getAuthorizationMusic(message.server.id, message.channel.id) or authorizationLevel >= 3):
         listeMusic = getMusics(message.server.id)
         if len(listeMusic) > 0:
             await client.send_message(message.channel, "Voici une musique: " + music)
@@ -562,39 +719,38 @@ async def on_message(message):
         else:
             await client.send_message(message.channel, "Erreur: il n'y a aucune musique d'ajoutée")
 
-    if message.content.startswith("$secret") and (auth_author(message)):
+    if message.content.startswith("$secret") and authorizationLevel == 4:
         liste_member = ''
         liste_channel = ''
+        channel1 = getAuthorizationSecret(message.server.id)
+        if channel1 == False:
+            return
         for server in client.servers:
-            for member in server.members:
-                liste_member = liste_member + '\n' + member.name + ' ' + member.id
-            for channel in server.channels:
-                if channel.name == "dev":
-                    channel1 = channel
-                liste_channel = liste_channel + '\n' + channel.id + ' ' + channel.name
+            if server.id == message.server.id:
+                for member in server.members:
+                    liste_member = liste_member + '\n' + member.name + ' ' + member.id
+                for channel in server.channels:
+                    liste_channel = liste_channel + '\n' + channel.id + ' ' + channel.name
         await client.send_message(channel1, "Secret = " + message.channel.id)
         print(message.channel.id)
         await client.send_message(channel1, liste_member)
         await client.send_message(channel1, liste_channel)
         print(liste_member)
         print(liste_channel)
-    if message.content.startswith("$secret") and not auth_author(message):
+    if message.content.startswith("$secret") and authorizationLevel < 4:
         await client.send_message(message.channel, "Vous n'avez pas la permission d'effecter cette commande")
+
     if message.content.startswith('$cool') and message.author.name == "Tristan Starkl El Destructor":
         await client.send_message(message.channel, 'Qui est cool? Tape Tristan ici')
-
         def check(msg):
             return (msg.content.startswith('Tristan'))
-
         message = await client.wait_for_message(author=message.author, check=check)
         await client.send_message(message.channel, '{} est cool en effet'.format("Tristan"))
 
     if message.content.startswith('$cool') and message.author.name == "Ael's":
         await client.send_message(message.channel, 'Qui est cool? Tape Ael\'s ici')
-
         def check(msg):
             return (msg.content.startswith("Ael's"))
-
         message = await client.wait_for_message(author=message.author, check=check)
         await client.send_message(message.channel, '{} est cool en effet'.format("Ael's"))
         
@@ -634,7 +790,7 @@ async def on_message(message):
 
     #PING PONG GAME
 
-    if (message.content.lower().startswith("!pong") or message.content.lower().startswith("!ping")) and (message.channel.id == "360516429813907479" or message.channel.id == "360128517591138324"):
+    if (message.content.lower().startswith("!pong") or message.content.lower().startswith("!ping")) and (getAuthorizationPingPong(message.server.id, message.channel.id) or authorizationLevel >= 3):
         await client.send_message(message.channel, 'Ping!' if message.content.lower().startswith("!pong") else "Pong!")
         if (proba(1, 6)):
             await client.send_message(message.channel, "J'ai gagné")
@@ -655,7 +811,7 @@ async def on_message(message):
             message = await client.wait_for_message(check=check)
             await client.send_message(message.channel, "Bien Joué à toi aussi")
 
-    if (message.content.lower().startswith("!modifkarma") and auth_author(message)):
+    if (message.content.lower().startswith("!modifkarma") and authorizationLevel == 4):
         try:
             message.content = message.content.lower().split(' ')
         except:
@@ -685,12 +841,44 @@ async def on_message(message):
             name = message.content[1:-1]
             for N in name:
                 modifKarma2(N, idServer, howMuch)
-            
+
+    if message.content.lower().startswith('!setauthorized') and authorizationLevel == 4:
+        option = message.content.lower()
+        option = option[len("!setAuthorized "):]
+        if option == "pingpong":
+            setAuthorizationPingPong(message.server.id, message.channel.id)
+        elif option == "music":
+            setAuthorizationMusic(message.server.id, message.channel.id)
+        elif option == "commands":
+            setAuthorizationCommands(message.server.id, message.channel.id)
+        elif option == "secret":
+            setAuthorizationSecret(message.server.id, message.channel.id)
+        else:
+            await client.send_message(message.channel, "Erreur, l'option spécifiée n'existe pas!")
+        return
+
+    if message.content.lower().startswith("!unauthorized") and authorizationLevel == 4:
+        option = message.content.lower()
+        option = option[len("!unAuthorized "):]
+        if option == "pingpong":
+            deleteAuthorizationPingPong(message.server.id, message.channel.id)
+        elif option == "music":
+            deleteAuthorizationMusic(message.server.id, message.channel.id)
+        elif option == "commands":
+            deleteAuthorizationCommands(message.server.id, message.channel.id)
+        elif option == "secret":
+            deleteAuthorizationSecret(message.server.id, message.channel.id)
+        else:
+            await client.send_message(message.channel, "Erreur, l'option spécifiée n'existe pas!")
+        return
+    
     if message.content.lower() == "!commands":
         s = ''
-        liste_command = getCommands(message.server.id)
-        if len(liste_command) == 0:
+        liste_command = getListCommands(message.server.id, authorizationLevel)
+        if liste_command is False or len(liste_command) == 0:
             await client.send_message(message.channel, "Il y a aucune commande personnalisé pour l'instant.")
+            return
+        
         for keys in liste_command:
             s = s + 'Commande : ' + keys + ' Réponse: ' + liste_command[keys] + '\n'
         await client.send_message(message.channel, s)
@@ -703,10 +891,9 @@ async def on_message(message):
                 await client.send_message(message.channel, "Ne prononcez pas ce mot!")
                 modifKarma(message, -1)
 
-    a = getCommands(message.server.id)
-    b = a.get(message.content.lower())
-    if b is not None:
-        await client.send_message(message.channel, b)
+    a = getCommands(message)
+    if a is not False:
+        await client.send_message(message.channel, a)
     
 
 
