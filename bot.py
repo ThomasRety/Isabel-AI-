@@ -6,13 +6,19 @@ import time
 from random import randint, choice
 import sqlite3
 import re
+import logging
 
 Client = discord.Client()
 bot_prefix = ""
 client = commands.Bot(command_prefix=bot_prefix)
 
+logger = logging.getLogger('discord')
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+logger.addHandler(handler)
 
-VERSION = "1.1.4"
+VERSION = "1.2.0"
 CHANGELOG = ""
 dbPath = "./save/database.db"
 
