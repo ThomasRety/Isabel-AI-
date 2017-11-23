@@ -175,7 +175,7 @@ def getCommands(message, authorizationLevel):
         return False
     else:
         try:
-            row = rows[0][0])
+            row = rows[0][0]
         except Exception as E:
             pass
     if authorizationLevel >= 3:
