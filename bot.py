@@ -484,6 +484,7 @@ IA = "Isabel [IA]#6016"
 @client.event
 async def on_message(message):
     #l'IA ne parse pas ses propres messages
+    insertPlayer(message)
     authorizationLevel = getAuthorizationLevel(message)
     if authorizationLevel is False or authorizationLevel == 0:
         print("Authorization Level", str(authorizationLevel))
@@ -497,8 +498,6 @@ async def on_message(message):
     global help_msg
     global help_dice
 
-
-    insertPlayer(message)
     modifKarma(message, 0)
     if (message.content.lower() == "!changelog"):
         await client.send_message(message.channel, CHANGELOG)
