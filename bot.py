@@ -210,6 +210,10 @@ def getOldVersion():
     try:
         with open('./.old', 'r') as f:
             old = f.readline()
+        import os
+        os.remove('./.old')
+        with open('./.old', 'a') as f:
+            f.write(VERSION)
         return old
     except Exception as E:
         try:
@@ -282,7 +286,7 @@ def is_channel_banned(message):
 
 
 def isAuthorizedChannelSpecified(mode, idServer):
-    f = "SELECT * FROM {} WHERE idServer = '{}'".format(mode, isServer)
+    f = "SELECT * FROM {} WHERE idServer = '{}'".format(mode, idServer)
     row = executeCommand(f)
     if row is False or len(row) == 0:
         return (False)
