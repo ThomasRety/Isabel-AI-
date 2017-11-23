@@ -251,6 +251,8 @@ def getAuthorizationLevel(message):
     idPlayer = message.author.id
     f = "SELECT authorizationLevel FROM player WHERE idServer = '{}' AND idPlayer = '{}'".format(serverId, idPlayer)
     row = executeCommand(f)
+    print(f)
+    print("--------------------------")
     print(row)
     if (row == False) or len(row) == 0:
         return (False)
