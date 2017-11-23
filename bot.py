@@ -18,7 +18,7 @@ handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w'
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
-VERSION = "1.2.0"
+VERSION = "1.3.0 Major Update!"
 CHANGELOG = ""
 dbPath = "./save/database.db"
 
@@ -36,7 +36,9 @@ help_msg = """ Voici une aide des commandes disponibles!\n
 - !changelog : renvoie le changelog de la dernière version\n
 - !curses [add] : Ajoute add aux mots interdits si spécifiés, sinon liste les mots interdits. [add] nécéssite d'être administrateur.\n
 - !setAuthorized PingPong|Music|Secret|Commands : authorise le channel à jouer l'option spécifié\n
-- !unAuthorized PingPong|Music|Secret|Commands : enlève l'autorisation de ce channel à jouer l'option spécifié"""
+- !unAuthorized PingPong|Music|Secret|Commands : enlève l'autorisation de ce channel à jouer l'option spécifié
+- !setDefaultChannel [idChannel] : spécifie le channel comme étant un channel par défaut\n
+- !unsetDefaultChannel [idChannel] : enlève le channel spécifié des channels par défauts"""
 
 help_dice = """ Voici l'aide des dés:\n
 - !de\n
@@ -178,7 +180,7 @@ def getCommands(message, authorizationLevel):
             pass
     if authorizationLevel >= 3:
         return row
-    f = getAuthorizationCommand(message.channel.id, message.channel.id)
+    f = getAuthorization("authorizationCommands", message.channel.id, message.channel.id)
     if f is False:
         return row
     return False
@@ -274,65 +276,55 @@ def is_channel_banned(message):
         print(E)
     return (True)
 
-def getAuthorizationCommand(idServer, idChannel):
-    f = "SELECT * FROM authorizationCommands WHERE idServer = '{}' AND idChannel = '{}'".format(isServer, idChannel)
+
+def isAuthorizedChannelSpecified(mode, idServer):
+    f = "SELECT * FROM {} WHERE idServer = '{}'".format(mode, isServer)
     row = executeCommand(f)
     if row is False or len(row) == 0:
         return (False)
     return (True)
 
-def getAuthorizationMusic(idServer, idChannel):
-    f = "SELECT * FROM authorizationMusic WHERE idServer = '{}' AND idChannel = '{}'".format(isServer, idChannel)
+def getAuthorization(mode, idServer, idChannel):
+    f = "SELECT * FROM {} WHERE idServer = '{}' AND idChannel = '{}'".format(mode, idServer, idChannel)
     row = executeCommand(f)
     if row is False or len(row) == 0:
         return (False)
     return (True)
 
-def getAuthorizationPingPong(idServer, idChannel):
-    f = "SELECT * FROM authorizationPingPong WHERE idServer = '{}' AND idChannel = '{}'".format(isServer, idChannel)
+def getAuthorizationSecret(idServer, idChannel):
+    f = "SELECT * FROM authorizationSecret WHERE idServer = '{}' AND idChannel = '{}' LIMIT 1".format(idServer, idChannel)
     row = executeCommand(f)
     if row is False or len(row) == 0:
         return (False)
-    return (True)
+    try:
+        return row[0][0]
+    except Exception as E:
+        return False
 
-def getAuthorizationSecret(idServer):
-    f = "SELECT idChannel FROM authorizationCommands WHERE idServer = '{}'".format(isServer)
-    row = executeCommand(f)
-    if row is False or len(row) == 0:
-        return (False)
-    return (row[0][0])
 
-def setAuthorizationCommands(idServer, idChannel):
-    f = "INSERT INTO authorizationCommands(idServer, idChannel) VALUES('{}', '{}')".format(isServer, idChannel)
+def getDefaultChannel(idServer):
+    f = "SELECT idChannel FROM defaultChannel WHERE idServer = '{}'".format(idServer)
+    rows = executeCommand(f)
+    if rows is False or len(rows) == 0:
+        return False
+    try:
+        a = list()
+        for row in rows:
+            a.append(row[0])
+        return (a)
+    except Exception as E:
+        print("getDefaultChannel", E)
+        return False
+        
+def setAuthorization(mode, idServer, idChannel):
+    f = "INSERT INTO {}(idServer, idChannel) VALUES('{}', '{}')".format(mode, idServer, idChannel)
     executeCommand(f)
+
     
-def setAuthorizationMusic(idServer, idChannel):
-    f = "INSERT INTO authorizationMusic(idServer, idChannel) VALUES('{}', '{}')".format(isServer, idChannel)
+def deleteAuthorization(mode, idServer, idChannel):
+    f = "DELETE FROM {} WHERE idServer = '{}' AND idChannel = '{}'".format(mode, idServer, idChannel)
     executeCommand(f)
 
-def setAuthorizationPingPong(idServer, idChannel):
-    f = "INSERT INTO authorizationPingPong(idServer, idChannel) VALUES('{}', '{}')".format(isServer, idChannel)
-    executeCommand(f)
-
-def setAuthorizationSecret(idServer, idChannel):
-    f = "INSERT INTO authorizationSecret(idServer, idChannel) VALUES('{}', '{}')".format(isServer, idChannel)
-    executeCommand(f)
-
-def deleteAuthorizationCommands(idServer, idChannel):
-    f = "DELETE FROM authorizationCommands WHERE idServer = '{}' AND idChannel = '{}'".format(isServer, idChannel)
-    executeCommand(f)
-    
-def setAuthorizationMusic(idServer, idChannel):
-    f = "INSERT INTO authorizationMusic(idServer, idChannel) VALUES('{}', '{}')".format(isServer, idChannel)
-    executeCommand(f)
-
-def setAuthorizationPingPong(idServer, idChannel):
-    f = "INSERT INTO authorizationPingPong(idServer, idChannel) VALUES('{}', '{}')".format(isServer, idChannel)
-    executeCommand(f)
-
-def setAuthorizationSecret(idServer, idChannel):
-    f = "INSERT INTO authorizationSecret(idServer, idChannel) VALUES('{}', '{}')".format(isServer, idChannel)
-    executeCommand(f)
 
 def setAuthorizationLevel(idServer, idPlayer, authorizalionLevel):
     f = "UPDATE player SET authorizationLevel = {} WHERE idPlayer = '{}' AND idServer = '{}'".format(str(authorizationLevel), idPlayer, idServer)
@@ -351,26 +343,7 @@ def save_banned_channel(message, id):
     serverId = message.server.id
     f = "INSERT INTO bannedChannels(idServer, idChannel) VALUES ('{}', '{}')".format(serverId, id)
     executeCommand(f)
-    
-def saveAuthorizationPingPong(message, id):
-    serverId = message.server.id
-    f = "INSERT INTO authorizationPingPong(idServer, idChannel) VALUES('{}', '{}')".format(serverId, id)
-    executeCommand(f)
 
-def saveAuthorizationMusic(message, id):
-    serverId = message.server.id
-    f = "INSERT INTO authorizationMusic(idServer, idChannel) VALUES('{}', '{}')".format(serverId, id)
-    executeCommand(f)
-
-def saveAuthorizationSecret(message, id):
-    serverId = message.server.id
-    f = "INSERT INTO authorizationSecret(idServer, idChannel) VALUES('{}', '{}')".format(serverId, id)
-    executeCommand(f)
-
-def saveAuthorizationCommands(message, id):
-    serverId = message.server.id
-    f = "INSERT INTO authorizationCommands(idServer, idChannel) VALUES('{}', '{}')".format(serverId, id)
-    executeCommand(f)
 
 def saveDefaultChannel(message, id):
     serverId = message.server.id
@@ -486,18 +459,17 @@ CHANGELOG = getChangelog(CHANGELOG)
 @client.event
 async def on_member_join(member):
     print("member has joined")
+    idServer = member.server.id
+    listIdChannel = getDefaultChannel(idServer)
+    if listIdChannel == False:
+        return
     for server in client.servers:
-        for channel in server.channels:
-            if (channel.name == "dev"):
-                channel1 = channel
-            elif (channel.name == "annonces"):
-                channel2 = channel
-        for role in server.roles:
-            if role.name == "Padawan":
-                defaut_role = role
-        break
-    await client.send_message(channel1, "Welcome {}. You joined the server at {}".format(member.name, str(member.joined_at)))
-    client.add_roles(member, defaut_role)
+        if server.id == idServer:
+            for idChannel in listIdChannel:
+                for channel in server.channels:
+                    if idChannel == channel.id:
+                        await client.send_message(channel, "Welcome {}. You joined the server at {}".format(member.name, str(member.joined_at)))
+    
 
 IA = "Isabel [IA]#6016"
 
@@ -710,7 +682,9 @@ async def on_message(message):
         else:
             save_musics(message.content[0], message.server.id)
 
-    if message.content.lower().startswith("!music") and (getAuthorizationMusic(message.server.id, message.channel.id) or authorizationLevel >= 3):
+    if message.content.lower().startswith("!music") and ((isAuthorizedChannelSpecified("authorizationMusic", message.server.id) == True and
+                                                          getAuthorization("authorizationMusic", message.server.id, message.channel.id))
+                                                         or (authorizationLevel >= 3) or (isAuthorizedChannelSpecified("authorizationMusic", message.server.id) == False)):
         listeMusic = getMusics(message.server.id)
         if len(listeMusic) > 0:
             await client.send_message(message.channel, "Voici une musique: " + music)
@@ -724,7 +698,7 @@ async def on_message(message):
         liste_channel = ''
         channel1 = getAuthorizationSecret(message.server.id)
         if channel1 == False:
-            return
+            channel1 = message.channel
         for server in client.servers:
             if server.id == message.server.id:
                 for member in server.members:
@@ -737,6 +711,7 @@ async def on_message(message):
         await client.send_message(channel1, liste_channel)
         print(liste_member)
         print(liste_channel)
+        return
     if message.content.startswith("$secret") and authorizationLevel < 4:
         await client.send_message(message.channel, "Vous n'avez pas la permission d'effecter cette commande")
 
@@ -790,7 +765,7 @@ async def on_message(message):
 
     #PING PONG GAME
 
-    if (message.content.lower().startswith("!pong") or message.content.lower().startswith("!ping")) and (getAuthorizationPingPong(message.server.id, message.channel.id) or authorizationLevel >= 3):
+    if (message.content.lower().startswith("!pong") or message.content.lower().startswith("!ping"))and ((isAuthorizedChannelSpecified("authorizationPingPong", message.server.id) == False) or ((isAuthorizedChannelSpecified("authorizationPingPong", message.server.id) == True) and getAuthorization("authorizationPingPong", message.server.id, message.channel.id) == True) or (authorizationLevel >= 3)):
         await client.send_message(message.channel, 'Ping!' if message.content.lower().startswith("!pong") else "Pong!")
         if (proba(1, 6)):
             await client.send_message(message.channel, "J'ai gagné")
@@ -845,29 +820,78 @@ async def on_message(message):
     if message.content.lower().startswith('!setauthorized') and authorizationLevel == 4:
         option = message.content.lower()
         option = option[len("!setAuthorized "):]
+        option = safeData(option)
         if option == "pingpong":
-            setAuthorizationPingPong(message.server.id, message.channel.id)
+            setAuthorization("authorizationPingPong", message.server.id, message.channel.id)
         elif option == "music":
-            setAuthorizationMusic(message.server.id, message.channel.id)
+            setAuthorization("authorizationMusic", message.server.id, message.channel.id)
         elif option == "commands":
-            setAuthorizationCommands(message.server.id, message.channel.id)
+            setAuthorization("authorizationCommands", message.server.id, message.channel.id)
         elif option == "secret":
-            setAuthorizationSecret(message.server.id, message.channel.id)
+            setAuthorization("authorizationSecret", message.server.id, message.channel.id)
         else:
             await client.send_message(message.channel, "Erreur, l'option spécifiée n'existe pas!")
+        return
+
+    if message.content.lower().startswith("!setDefaultChannel".lower()) and authorizationLevel == 4:
+        option = message.content.lower()
+        option = option[len("!setDefaultChannel "):]
+        if option == '':
+            setAuthorization("defaultChannel", message.server.id, message.channel.id)
+            await client.send_message(message.channel, "C'est maintenant le channel par défaut")
+        else:
+            option = safeData(option)
+            setAuthorization('defaultChannel', message.server.id, option)
+            await client.send_message(message.channel, "Le channel {} est maintenant considéré comme le channel par défault pour Isabel".format(str(option)))
+        return
+
+    if message.content.lower().startswith("!unsetDefaultChannel".lower()) and authorizationLevel == 4:
+        option = message.content.lower()
+        option = option[len("!unsetDefaultChannel "):]
+        if option == '':
+            deleteAuthorization("defaultChannel", message.server.id, message.channel.id)
+            await client.send_message(message.channel, "Ce channel n'est plus un channel par défaut")
+        else:
+            option = safeData(option)
+            deleteAuthorization('defaultChannel', message.server.id, option)
+            await client.send_message(message.channel, "Le channel {} n'est plus un channel par défaut pour Isabel".format(str(option)))
+        return
+
+    if message.content.lower().startswith("!setDefaultChangelog".lower()) and authorizationLevel == 4:
+        option = message.content.lower()
+        option = option[len("!setDefaultChangelog "):]
+        if option == '':
+            setAuthorization("defaultChangelog", message.server.id, message.channel.id)
+            await client.send_message(message.channel, "Ce channel n'est plus un channel par défaut pour le changelog")
+        else:
+            option = safeData(option)
+            setAuthorization('defaultChangelog', message.server.id, option)
+            await client.send_message(message.channel, "Le channel {} n'est plus un channel par défaut pour le changelog".format(str(option)))
+        return
+    
+    if message.content.lower().startswith("!unsetDefaultChangelog".lower()) and authorizationLevel == 4:
+        option = message.content.lower()
+        option = option[len("!unsetDefaultChangelog "):]
+        if option == '':
+            deleteAuthorization("defaultChangelog", message.server.id, message.channel.id)
+            await client.send_message(message.channel, "Ce channel n'est plus un channel par défaut pour le changelog")
+        else:
+            option = safeData(option)
+            deleteAuthorization('defaultChangelog', message.server.id, option)
+            await client.send_message(message.channel, "Le channel {} n'est plus un channel par défaut pour le changelog".format(str(option)))
         return
 
     if message.content.lower().startswith("!unauthorized") and authorizationLevel == 4:
         option = message.content.lower()
         option = option[len("!unAuthorized "):]
         if option == "pingpong":
-            deleteAuthorizationPingPong(message.server.id, message.channel.id)
+            deleteAuthorization("authorizationPingPong", message.server.id, message.channel.id)
         elif option == "music":
-            deleteAuthorizationMusic(message.server.id, message.channel.id)
+            deleteAuthorization("authorizationMusic", message.server.id, message.channel.id)
         elif option == "commands":
-            deleteAuthorizationCommands(message.server.id, message.channel.id)
+            deleteAuthorization("authorizationCommands", message.server.id, message.channel.id)
         elif option == "secret":
-            deleteAuthorizationSecret(message.server.id, message.channel.id)
+            deleteAuthorization("authorizationSecret", message.server.id, message.channel.id)
         else:
             await client.send_message(message.channel, "Erreur, l'option spécifiée n'existe pas!")
         return
@@ -891,9 +915,10 @@ async def on_message(message):
                 await client.send_message(message.channel, "Ne prononcez pas ce mot!")
                 modifKarma(message, -1)
 
-    a = getCommands(message)
-    if a is not False:
-        await client.send_message(message.channel, a)
+    if ((isAuthorizedChannelSpecified("authorizationCommands", message.server.id) == False) or ((isAuthorizedChannelSpecified("authorizationCommands", message.server.id) == True) and getAuthorization("authorizationCommands") == True) or authorizationLevel >= 3): 
+        a = getCommands(message)
+        if a is not False:
+            await client.send_message(message.channel, a)
     
 
 
@@ -902,5 +927,6 @@ if __name__ == '__main__':
     try:
         TOKEN = sys.argv[1]
     except:
+        print('USAGE: python3 bot.py TOKENBOT')
         sys.exit(1)
     client.run(TOKEN)
