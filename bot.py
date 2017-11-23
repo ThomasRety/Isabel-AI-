@@ -924,7 +924,7 @@ async def on_message(message):
                 modifKarma(message, -1)
 
     if ((isAuthorizedChannelSpecified("authorizationCommands", message.server.id) == False) or ((isAuthorizedChannelSpecified("authorizationCommands", message.server.id) == True) and getAuthorization("authorizationCommands") == True) or authorizationLevel >= 3): 
-        a = getCommands(message)
+        a = getCommands(message, authorizationLevel)
         if a is not False:
             await client.send_message(message.channel, a)
     
