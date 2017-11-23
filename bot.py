@@ -483,6 +483,7 @@ async def on_message(message):
     #l'IA ne parse pas ses propres messages
     authorizationLevel = getAuthorizationLevel(message)
     if authorizationLevel is False or authorizationLevel == 0:
+        print("Authorization Level", str(authorizationLevel))
         return
 
     if (message.author.id == "359784743518339082"):
