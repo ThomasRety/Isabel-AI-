@@ -248,6 +248,7 @@ def getQuestion(message, defaultMessage='needAuthorization', defaultValue=0):
 
 def getAuthorizationLevel(message):
     serverId = message.server.id
+    idPlayer = message.author.id
     f = "SELECT authorizationLevel FROM player WHERE idServer = '{}' AND idPlayer = '{}'".format(serverId, idPlayer)
     row = executeCommand(f)
     if (row == False) or len(row) == 0:
