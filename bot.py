@@ -933,7 +933,7 @@ async def on_message(message):
                 return
             setAuthorizationLevel(message.server.id, idPlayer, newAuth)
         except Exception as E:
-            print(E)
+            print("Exception in setAuthorizationLevel: ", E)
             await client.send_message(message.channel, "Usage: !setAuthorizationLevel idPlayer authorizationLevel")
             return
     elif message.content.lower().startswith("!setAuthorizationLevel".lower()) and authorizationLevel != 4:
