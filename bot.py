@@ -923,6 +923,27 @@ async def on_message(message):
                 await client.send_message(message.channel, "Ne prononcez pas ce mot!")
                 modifKarma(message, -1)
 
+    if message.content.lower().startswith("!setAuthorizationLevel".lower()) and authorizationLevel == 4:
+        try:
+            tab = message.content.lower().split(' ')
+            idPlayer = safeData(tab[1])
+            newAuth = int(safeData(tab[2]))
+            if newAuth > 4 or newAuth < 0:
+                await client.send_message(message.channel, "Erreur: le level d'authorization doit-être compris entre 0 et 4.")
+                return
+            setAuthorizationLevel(message.server.id, idPlayer, newAuth)
+        except Exception as E:
+            print(E)
+            await client.send_message(message.channel, "Usage: !setAuthorizationLevel idPlayer authorizationLevel")
+            return
+    elif message.content.lower().startswith("!setAuthorizationLevel".lower()) and authorizationLevel != 4:
+        await client.send_message(message.channel, "Erreur: vous n'avez pas le droit d'effectuer cette commande")
+        return
+
+    if message.content.lower().startswith("!authorizationLevel".lower()):
+        await client.send_message(message.channel, "Votre level d'accréditation Isabel est de {}".format(str(authorizationLevel)))
+        return
+    
     if ((isAuthorizedChannelSpecified("authorizationCommands", message.server.id) == False) or ((isAuthorizedChannelSpecified("authorizationCommands", message.server.id) == True) and getAuthorization("authorizationCommands") == True) or authorizationLevel >= 3): 
         a = getCommands(message, authorizationLevel)
         if a is not False:
