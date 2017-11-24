@@ -334,7 +334,7 @@ def deleteAuthorization(mode, idServer, idChannel):
     executeCommand(f)
 
 
-def setAuthorizationLevel(idServer, idPlayer, authorizalionLevel):
+def setAuthorizationLevel(idServer, idPlayer, authorizationLevel):
     f = "UPDATE player SET authorizationLevel = {} WHERE idPlayer = '{}' AND idServer = '{}'".format(str(authorizationLevel), idPlayer, idServer)
     executeCommand(f)
 
@@ -929,7 +929,7 @@ async def on_message(message):
             idPlayer = safeData(tab[1])
             newAuth = int(safeData(tab[2]))
             if newAuth > 4 or newAuth < 0:
-                await client.send_message(message.channel, "Erreur: le level d'authorization doit-être compris entre 0 et 4.")
+                await client.send_message(message.channel, "Erreur: le level d'autorisation doit-être compris entre 0 et 4.")
                 return
             setAuthorizationLevel(message.server.id, idPlayer, newAuth)
         except Exception as E:
