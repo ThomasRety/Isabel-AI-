@@ -704,7 +704,7 @@ async def on_message(message):
     if message.content.startswith("$secret") and authorizationLevel == 4:
         liste_member = ''
         liste_channel = ''
-        channel1 = getAuthorizationSecret(message.server.id)
+        channel1 = getAuthorizationSecret(message.server.id, message.channel.id)
         if channel1 == False:
             channel1 = message.channel
         for server in client.servers:
