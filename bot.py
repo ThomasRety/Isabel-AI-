@@ -255,9 +255,6 @@ def getAuthorizationLevel(message):
     idPlayer = message.author.id
     f = "SELECT authorizationLevel FROM player WHERE idServer = '{}' AND idPlayer = '{}'".format(serverId, idPlayer)
     row = executeCommand(f)
-    print(f)
-    print("--------------------------")
-    print(row)
     if (row == False) or len(row) == 0:
         return (False)
     try:
@@ -490,8 +487,8 @@ async def on_message(message):
     #l'IA ne parse pas ses propres messages
     insertPlayer(message)
     authorizationLevel = getAuthorizationLevel(message)
+    print(message.content)
     if authorizationLevel is False or authorizationLevel == 0:
-        print("Authorization Level", str(authorizationLevel))
         return
 
     if (message.author.id == "359784743518339082"):
