@@ -730,12 +730,17 @@ async def on_message(message):
     if message.content.lower().startswith("peripeties"):
         _liste = option("list", message.content.lower(), VALUES=["True"])
         _idPlayer = option("id", message.content.lower())
-        await client.send_message(message.channel, getPeripeties(message.server.id, idPlayer=_idPlayer, liste=_liste))
+        s = getPeripeties(message.server.id, idPlayer=_idPlayer, liste=_liste)
+        print("Liste option = ", _liste)
+        print("IdPlayer = ", _idPlayer)
+        print(s)
+        await client.send_message(message.channel, s)
         return
     
     if message.content.lower().startswith('!add peripeties') and authorizationLevel >= 3:
         peripetie = safeData(message.content[len("!add peripeties "):])
         savePeripeties(peripetie, message)
+        await client.send_message(message.channel, "La péripétie a bien étée sauvegardée")
         return
     
     if message.content.startswith('!add') and authorizationLevel == 4:
