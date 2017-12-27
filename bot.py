@@ -51,7 +51,7 @@ def proba(x, max=100):
     y = randint(0, max)
     return (x == y)
 
-def option(name, content, VALUES=[]):
+def getOption(name, content, VALUES=[]):
     index = content.find(name)
     if (index == -1):
         return (False)
@@ -728,8 +728,8 @@ async def on_message(message):
         return
     
     if message.content.lower().startswith("!peripeties"):
-        _liste = option("list", message.content.lower(), VALUES=["True"])
-        _idPlayer = option("id", message.content.lower())
+        _liste = getOption("list", message.content.lower(), VALUES=["True"])
+        _idPlayer = getOption("id", message.content.lower())
         s = getPeripeties(message.server.id, idPlayer=_idPlayer, liste=_liste)
         print("Liste option = ", _liste)
         print("IdPlayer = ", _idPlayer)
