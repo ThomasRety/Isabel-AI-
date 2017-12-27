@@ -53,10 +53,12 @@ def proba(x, max=100):
 
 def getOption(name, content, VALUES=[]):
     index = content.find(name)
+    print(index)
     if (index == -1):
         return (False)
-    if (content[index + 1] == '='):
+    if (content[index + 1 + len(name)] == '='):
         value = content[index + 2:]
+        print("value = ", value)
         index = 0
         for c in value:
             if c == ' ':
