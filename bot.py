@@ -424,7 +424,7 @@ def save_command(idServer, content, defaultMessage='needLevel', defaultValue=1):
 
 def savePeripeties(peripeties, message):
     idServer, idPlayer = message.server.id, message.author.id
-    f = "INSERT INTO peripetiesRPG(idServer, idPeripeties, peripeties) VALUES('{}', '{}', '{}')".format(idServer, idPlayer, peripeties)
+    f = "INSERT INTO peripetiesRPG(idServer, idPlayer, peripeties) VALUES('{}', '{}', '{}')".format(idServer, idPlayer, peripeties)
     executeCommand(f)
 
 ############################################################################################################################################
@@ -734,7 +734,7 @@ async def on_message(message):
         return
     
     if message.content.lower().startswith('!add peripeties') and authorizationLevel >= 3:
-        peripetie = safeData(message.content[len("add peripeties"):])
+        peripetie = safeData(message.content[len("!add peripeties "):])
         savePeripeties(peripetie, message)
         return
     
