@@ -424,7 +424,7 @@ def save_command(idServer, content, defaultMessage='needLevel', defaultValue=1):
 
 def savePeripeties(peripeties, message):
     idServer, idPlayer = message.server.id, message.author.id
-    f = "INSERT INTO peripetiesRPG(idServer, idPeripeties, peripeties) VALUE('{}', '{}', '{}')".format(idServer, idPlayer, peripeties)
+    f = "INSERT INTO peripetiesRPG(idServer, idPeripeties, peripeties) VALUES('{}', '{}', '{}')".format(idServer, idPlayer, peripeties)
     executeCommand(f)
 
 ############################################################################################################################################
