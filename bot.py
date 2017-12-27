@@ -270,7 +270,7 @@ def getPeripeties(idServer, defaultIdPlayer = False, liste = False):
     if liste:
         s = ""
         for ids in row:
-            s += ids[0]) + '\n'
+            s += ids[0] + '\n'
         return (s)
     if not row:
         return (False)
