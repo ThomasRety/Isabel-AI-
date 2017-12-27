@@ -727,7 +727,7 @@ async def on_message(message):
             await client.send_message(message.channel, s)
         return
     
-    if message.content.lower().startswith("peripeties"):
+    if message.content.lower().startswith("!peripeties"):
         _liste = option("list", message.content.lower(), VALUES=["True"])
         _idPlayer = option("id", message.content.lower())
         s = getPeripeties(message.server.id, idPlayer=_idPlayer, liste=_liste)
