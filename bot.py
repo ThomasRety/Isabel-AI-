@@ -485,7 +485,7 @@ def insertPlayer(message):
 
 
 def getName(idPlayer, idServer):
-    f = "SELECT name FROM player WHERE idPlayer = '{}' AND idServer = '{}".format(idPlayer, idServer)
+    f = "SELECT name FROM player WHERE idPlayer = '{}' AND idServer = '{}'".format(idPlayer, idServer)
     row = executeCommand(f)
     try:
         return (row[0][0])
