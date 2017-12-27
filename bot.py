@@ -733,7 +733,7 @@ async def on_message(message):
         await client.send_message(message.channel, getPeripeties(message.server.id, idPlayer=_idPlayer, liste=_liste))
         return
     
-    if message.content.lower().startswith('add peripeties') and authorizationLevel >= 3:
+    if message.content.lower().startswith('!add peripeties') and authorizationLevel >= 3:
         peripetie = safeData(message.content[len("add peripeties"):])
         savePeripeties(peripetie, message)
         return
