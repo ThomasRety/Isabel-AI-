@@ -730,7 +730,7 @@ async def on_message(message):
     if message.content.lower().startswith("!peripeties"):
         _liste = getOption("list", message.content.lower(), VALUES=["True"])
         _idPlayer = getOption("id", message.content.lower())
-        s = getPeripeties(message.server.id, idPlayer=_idPlayer, liste=_liste)
+        s = getPeripeties(message.server.id, defaultIdPlayer=_idPlayer, liste=_liste)
         print("Liste option = ", _liste)
         print("IdPlayer = ", _idPlayer)
         print(s)
