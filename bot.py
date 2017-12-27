@@ -18,7 +18,7 @@ handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w'
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
-VERSION = "1.3.0 Major Update!"
+VERSION = "1.3.1 Peripeties"
 CHANGELOG = ""
 dbPath = "./save/database.db"
 
@@ -246,6 +246,39 @@ def getQuestion(message, defaultMessage='needAuthorization', defaultValue=0):
         print ("Problème : ", E)
     return False, False, False, False
 
+def getListOptions(param, sep='"'):
+    a = list()
+    s = ''
+    start = False
+    for letter in param:
+        if letter == sep and start == False:
+            start = True
+        elif letter != sep and start == True:
+            s += letter
+        elif letter == sep and start == True:
+            start = False
+            a.append(s)
+            s = ''
+    return (a)
+
+def getPeripeties(idServer, defaultIdPlayer = False, liste = False):
+    if not defaultIdPlayer:
+        f = "SELECT peripeties FROM peripetiesRPG WHERE idServer = '{}'".format(idServer)
+    else:
+        f = "SELECT peripeties FROM peripetiesRPG WHERE idServer = '{}' AND idPlayer = '{}'".format(idServer, defaultPlayerId)
+    row = executeCommand(f)
+    if liste:
+        s = ""
+        for ids in row:
+            s += ids[0]) + '\n'
+        return (s)
+    if not row:
+        return (False)
+    randomChoice = random.choice(row)
+    return (randomChoice[0])
+
+
+
 ############################################################################################################################################
 ########################################################### AUTHORIZATION ##################################################################
 ############################################################################################################################################
@@ -373,6 +406,10 @@ def save_command(idServer, content, defaultMessage='needLevel', defaultValue=1):
         return ("Erreur, l'option n'existe pas")
     return ("La commande a été ajoutée avec succès")
 
+def savePeripeties(peripeties, message):
+    idServer, idPlayer = message.server.id, message.author.id
+    f = "INSERT INTO peripetiesRPG(idServer, idPeripeties, peripeties) VALUE('{}', '{}', '{}')".format(idServer, idPlayer, peripeties)
+    executeCommand(f)
 
 ############################################################################################################################################
 ########################################################### KARMA FUNCTIONS#################################################################
@@ -445,6 +482,15 @@ def insertPlayer(message):
             executeCommand(f)
     except Exception as E:
         print ("Insert Player Exception : ", E)
+
+
+def getName(idPlayer, idServer):
+    f = "SELECT name FROM player WHERE idPlayer = '{}' AND idServer = '{}".format(idPlayer, idServer)
+    row = executeCommand(f)
+    try:
+        return (row[0][0])
+    except:
+        return (False)
 
 @client.event
 async def on_ready():
@@ -664,6 +710,17 @@ async def on_message(message):
         for key in list_curses:
             s = s + key 
             await client.send_message(message.channel, s)
+        return
+    
+    if message.content.lower().startswith("peripeties"):
+        _liste = option("list", message.content.lower())
+        _idPlayer = option("id", message.content.lower())
+        await client.send_message(message.channel, getPeripeties(message.server.id, idPlayer=_idPlayer, liste=_liste))
+        return
+    
+    if message.content.lower().startswith('add peripeties') and authorizationLevel >= 3:
+        peripetie = safeData(message.content[len("add peripeties"):])
+        savePeripeties(peripetie, message)
         return
     
     if message.content.startswith('!add') and authorizationLevel == 4:
@@ -924,11 +981,15 @@ async def on_message(message):
         try:
             tab = message.content.lower().split(' ')
             idPlayer = safeData(tab[1])
+            clientName = getName(idPlayer)
+            if not clientName:
+                await client.send_message(message.channel, "Erreur, l'usager n'existe pas!")                
             newAuth = int(safeData(tab[2]))
             if newAuth > 4 or newAuth < 0:
                 await client.send_message(message.channel, "Erreur: le level d'autorisation doit-être compris entre 0 et 4.")
                 return
             setAuthorizationLevel(message.server.id, idPlayer, newAuth)
+            await client.send_message(message.channel, "L'user {} a maintenant un level d'accréditation : {}".format(clientName, str(newAuth)))
         except Exception as E:
             print("Exception in setAuthorizationLevel: ", E)
             await client.send_message(message.channel, "Usage: !setAuthorizationLevel idPlayer authorizationLevel")
