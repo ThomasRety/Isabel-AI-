@@ -57,7 +57,7 @@ def getOption(name, content, VALUES=[]):
     if (index == -1):
         return (False)
     if (content[index + 1 + len(name)] == '='):
-        value = content[index + 2:]
+        value = content[index + 2 + len(name):]
         print("value = ", value)
         index = 0
         for c in value:
@@ -730,7 +730,7 @@ async def on_message(message):
         return
     
     if message.content.lower().startswith("!peripeties"):
-        _liste = getOption("list", message.content.lower(), VALUES=["True"])
+        _liste = getOption("list", message.content.lower(), VALUES=["true"])
         _idPlayer = getOption("id", message.content.lower())
         s = getPeripeties(message.server.id, defaultIdPlayer=_idPlayer, liste=_liste)
         print("Liste option = ", _liste)
