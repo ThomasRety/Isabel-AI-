@@ -290,7 +290,7 @@ def getPeripeties(idServer, defaultIdPlayer = False, liste = False):
         return (s)
     if not row:
         return (False)
-    randomChoice = random.choice(row)
+    randomChoice = choice(row)
     return (randomChoice[0])
 
 
