@@ -51,6 +51,22 @@ def proba(x, max=100):
     y = randint(0, max)
     return (x == y)
 
+def option(name, content, VALUES=[]):
+    index = content.find(name)
+    if (index == -1):
+        return (False)
+    if (content[index + 1] == '='):
+        value = content[index + 2:]
+        index = 0
+        for c in value:
+            if c == ' ':
+                break
+            index += 1
+        value = value[0:index]
+        if value in VALUES:
+            return (value)
+    return (False)
+
 ############################################################################################################################################
 ########################################################### DB PART ########################################################################
 ############################################################################################################################################
@@ -712,7 +728,7 @@ async def on_message(message):
         return
     
     if message.content.lower().startswith("peripeties"):
-        _liste = option("list", message.content.lower())
+        _liste = option("list", message.content.lower(), VALUES=["True"])
         _idPlayer = option("id", message.content.lower())
         await client.send_message(message.channel, getPeripeties(message.server.id, idPlayer=_idPlayer, liste=_liste))
         return
