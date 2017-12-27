@@ -533,7 +533,6 @@ async def on_message(message):
     #l'IA ne parse pas ses propres messages
     insertPlayer(message)
     authorizationLevel = getAuthorizationLevel(message)
-    print(message.content)
     if authorizationLevel is False or authorizationLevel == 0:
         return
 
@@ -981,7 +980,7 @@ async def on_message(message):
         try:
             tab = message.content.lower().split(' ')
             idPlayer = safeData(tab[1])
-            clientName = getName(idPlayer)
+            clientName = getName(idPlayer, message.server.id)
             if not clientName:
                 await client.send_message(message.channel, "Erreur, l'usager n'existe pas!")                
             newAuth = int(safeData(tab[2]))
